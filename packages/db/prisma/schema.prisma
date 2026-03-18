@@ -1,0 +1,854 @@
+// ============================================================================
+// NextPress — Complete Prisma Schema
+// ============================================================================
+//
+// PostgreSQL-backed data model for a WordPress-like CMS.
+// Organized by domain: Auth → Tenancy → Users → Content → Taxonomy →
+// Media → Comments → Menus → Settings → Plugins → Themes → Blocks
+//
+// Conventions:
+//   - cuid() IDs everywhere (URL-safe, sortable, no collisions)
+//   - @@map("snake_case") on every model (Prisma PascalCase, DB snake_case)
+//   - Tenant-scoped models always carry tenantId + compound indexes
+//   - Cascade deletes only where orphans make no sense
+//   - Json columns for genuinely schema-less data; normalized tables otherwise
+// ============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgcrypto]
+}
+
+// ============================================================================
+// 1. AUTH.JS (NextAuth v5) — required adapter models
+// ============================================================================
+// These four models satisfy the Auth.js Prisma adapter contract.
+// We add our own columns (passwordHash, displayName, bio, etc.) to User
+// but never remove the adapter-required fields.
+// ============================================================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type              String  // "oauth" | "oidc" | "email" | "credentials"
+  provider          String  // "google", "github", "credentials", …
+  providerAccountId String
+
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================================================
+// 2. MULTI-TENANCY — Site / Tenant
+// ============================================================================
+// A "Site" is the tenant boundary. Every piece of content, every user role
+// assignment, every plugin activation is scoped to a Site.
+//
+// Single-tenant deployments simply have one Site row. The model is here from
+// day one so the tenantId foreign key exists on every table — retrofitting
+// multi-tenancy later is far more painful than carrying an unused column.
+// ============================================================================
+
+model Site {
+  id        String   @id @default(cuid())
+  slug      String   @unique          // subdomain: <slug>.nextpress.app
+  name      String                    // "My Blog", "Acme Corp"
+  domain    String?  @unique          // custom domain: www.example.com
+  tagline   String?
+  logoUrl   String?
+  faviconUrl String?
+  locale    String   @default("en")
+  timezone  String   @default("UTC")
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ── Relations ──
+  userSites       UserSite[]
+  contentTypes    ContentType[]
+  contentEntries  ContentEntry[]
+  fieldDefinitions FieldDefinition[]
+  taxonomies      Taxonomy[]
+  media           MediaAsset[]
+  menus           Menu[]
+  comments        Comment[]
+  settings        Setting[]
+  plugins         PluginInstall[]
+  themes          ThemeInstall[]
+  blockTemplates  BlockTemplate[]
+
+  @@map("sites")
+}
+
+// ============================================================================
+// 3. USERS, ROLES & PERMISSIONS
+// ============================================================================
+// Users are global (one account, many sites). Roles are global definitions.
+// Permissions are granular capabilities attached to roles.
+// UserSite is the join that says "this user has this role on this site."
+//
+// Why a separate Permission model instead of String[] on Role?
+//   - Queryable: "which roles can edit_others_posts?" is a JOIN, not array scan
+//   - Groupable: permissions have a `group` for admin UI organization
+//   - Documentable: each permission carries a description
+//   - Extensible: plugins INSERT rows, no schema change needed
+//   - The Role→Permission join table (RolePermission) makes grant/revoke atomic
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?               // Auth.js adapter field
+  name          String?
+  displayName   String?
+  image         String?                 // Auth.js adapter field (avatar URL)
+  passwordHash  String?                 // null for OAuth-only users
+  bio           String?   @db.Text
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // ── Relations ──
+  accounts      Account[]
+  sessions      Session[]
+  sites         UserSite[]
+  meta          UserMeta[]
+  contentEntries ContentEntry[]
+  revisions     Revision[]
+  media         MediaAsset[]
+  comments      Comment[]
+
+  @@map("users")
+}
+
+model UserMeta {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key    String
+  value  Json
+
+  @@unique([userId, key])
+  @@map("user_meta")
+}
+
+model Role {
+  id          String @id @default(cuid())
+  slug        String @unique              // "admin", "editor", "author", …
+  name        String                      // "Administrator", "Editor", …
+  description String?
+  isSystem    Boolean @default(false)     // true = cannot be deleted
+
+  // ── Relations ──
+  permissions RolePermission[]
+  userSites   UserSite[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String @id @default(cuid())
+  slug        String @unique              // "edit_posts", "manage_plugins", …
+  name        String                      // "Edit Posts"
+  description String?
+  group       String @default("general")  // "content", "users", "appearance", …
+
+  // ── Relations ──
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserSite {
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  siteId   String
+  site     Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  roleId   String
+  role     Role   @relation(fields: [roleId], references: [id])
+
+  joinedAt DateTime @default(now())
+
+  @@id([userId, siteId])
+  @@index([siteId, roleId])
+  @@map("user_sites")
+}
+
+// ============================================================================
+// 4. CONTENT TYPE REGISTRY
+// ============================================================================
+// WordPress hard-codes "post" and "page" and lets plugins register more via PHP.
+// We store content type definitions in the DB so they survive restarts, are
+// per-site, and are queryable (admin UI lists them, API exposes them).
+//
+// Built-in types ("post", "page") are seeded with isSystem: true.
+// Plugins register custom types by inserting rows.
+//
+// The `settings` JSON column holds type-specific config:
+//   { supports: ["title","editor","excerpt","thumbnail","comments","revisions"],
+//     hasArchive: true, menuIcon: "file-text", menuPosition: 5 }
+// ============================================================================
+
+model ContentType {
+  id           String  @id @default(cuid())
+  siteId       String
+  site         Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  slug         String                   // "post", "page", "product", …
+  nameSingular String                   // "Post", "Product"
+  namePlural   String                   // "Posts", "Products"
+  description  String?
+  isSystem     Boolean @default(false)  // true = "post"/"page", cannot delete
+  hierarchical Boolean @default(false)  // pages = true (parent/child)
+  hasArchive   Boolean @default(true)   // generates /products/ archive page
+  isPublic     Boolean @default(true)   // false = hidden from public queries
+  menuIcon     String  @default("file-text")
+  menuPosition Int     @default(20)
+  supports     String[]                 // ["title","editor","excerpt","thumbnail",
+                                        //  "comments","revisions","custom-fields"]
+  settings     Json    @default("{}")   // anything else the type needs
+
+  // ── Relations ──
+  fieldDefinitions FieldDefinition[]
+  contentEntries   ContentEntry[]
+
+  @@unique([siteId, slug])
+  @@map("content_types")
+}
+
+// ============================================================================
+// 5. FIELD DEFINITIONS & FIELD VALUES
+// ============================================================================
+// WordPress uses wp_postmeta (pure EAV: key + longtext value) for custom fields.
+// That works but loses type information and makes queries painful.
+//
+// NextPress adds a **FieldDefinition** layer on top of FieldValue:
+//   - FieldDefinition declares "this content type has a field called 'price'
+//     of type 'number', required, with these validation rules"
+//   - FieldValue stores the actual value as Json (preserving type)
+//
+// This gives us:
+//   ✓ Admin UI auto-generates form controls from definitions
+//   ✓ API validation at the service layer
+//   ✓ TypeScript types can be generated from definitions
+//   ✓ Plugins register fields by inserting FieldDefinition rows
+//   ✓ Values remain queryable via JSON operators
+//
+// Why not typed columns (price DECIMAL, color VARCHAR)?
+//   → Requires a migration for every custom field. Impossible for user-defined
+//     fields or plugin fields. The whole point of a CMS is that non-developers
+//     can add fields without touching the database schema.
+//
+// Why not a single JSONB blob per content entry?
+//   → Can't index individual fields. Can't query "all products where price > 50"
+//     without scanning every row's JSON. EAV with Json values + GIN index on
+//     (key, value) gives us both flexibility and queryability.
+// ============================================================================
+
+model FieldDefinition {
+  id            String  @id @default(cuid())
+  siteId        String
+  site          Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  contentTypeId String?
+  contentType   ContentType? @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+
+  key           String                  // "price", "color", "event_date"
+  name          String                  // "Price", "Color", "Event Date"
+  description   String?
+  fieldType     FieldType               // TEXT, NUMBER, BOOLEAN, DATE, …
+  isRequired    Boolean @default(false)
+  defaultValue  Json?                   // default if not set
+  validation    Json?                   // { min: 0, max: 9999, pattern: "..." }
+  options       Json?                   // for SELECT/RADIO: [{ label, value }, …]
+  group         String  @default("custom-fields") // admin UI grouping
+  sortOrder     Int     @default(0)     // display order in admin forms
+  source        String  @default("core") // "core" or plugin slug that registered it
+
+  // ── Relations ──
+  values        FieldValue[]
+
+  @@unique([siteId, contentTypeId, key])
+  @@map("field_definitions")
+}
+
+enum FieldType {
+  TEXT            // short string
+  TEXTAREA        // long string
+  RICHTEXT        // HTML / block content
+  NUMBER          // integer or float
+  BOOLEAN         // true/false toggle
+  DATE            // date only
+  DATETIME        // date + time
+  SELECT          // single choice from options
+  MULTISELECT     // multiple choices
+  MEDIA           // reference to MediaAsset
+  RELATION        // reference to another ContentEntry
+  COLOR           // hex/rgb color
+  URL             // validated URL
+  EMAIL           // validated email
+  JSON            // freeform JSON
+}
+
+model FieldValue {
+  id                String  @id @default(cuid())
+  contentEntryId    String
+  contentEntry      ContentEntry @relation(fields: [contentEntryId], references: [id], onDelete: Cascade)
+  fieldDefinitionId String
+  fieldDefinition   FieldDefinition @relation(fields: [fieldDefinitionId], references: [id], onDelete: Cascade)
+  value             Json                // actual value, type matches FieldDefinition.fieldType
+
+  @@unique([contentEntryId, fieldDefinitionId])
+  @@index([fieldDefinitionId])
+  @@map("field_values")
+}
+
+// ============================================================================
+// 6. CONTENT ENTRIES
+// ============================================================================
+// The unified content table. Every post, page, product, event, testimonial
+// is a row here, distinguished by contentTypeId.
+//
+// `blocks` stores the block editor content as JSONB:
+//   [{ id, type: "core/paragraph", attributes: { text: "..." }, innerBlocks: [] }]
+//
+// Why JSONB for blocks instead of serialized HTML?
+//   - Structured: queryable ("find posts containing an image block")
+//   - Re-renderable: themes can restyle without data migration
+//   - API-friendly: consumers get structured data, not HTML soup
+//   - Deterministic: same data → same output, always
+//
+// `password` enables WordPress-style password-protected posts.
+// `template` allows per-entry template override ("full-width", "sidebar-left").
+// `parentId` enables hierarchical content (page → subpage).
+// ============================================================================
+
+model ContentEntry {
+  id            String        @id @default(cuid())
+  siteId        String
+  site          Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  contentTypeId String
+  contentType   ContentType   @relation(fields: [contentTypeId], references: [id])
+
+  status        ContentStatus @default(DRAFT)
+  title         String
+  slug          String
+  excerpt       String?       @db.Text
+  blocks        Json          @default("[]")  // BlockData[] — the editor content
+  password      String?                       // password-protected entry
+
+  authorId      String
+  author        User          @relation(fields: [authorId], references: [id])
+
+  // ── Hierarchy (pages) ──
+  parentId      String?
+  parent        ContentEntry?  @relation("ContentHierarchy", fields: [parentId], references: [id])
+  children      ContentEntry[] @relation("ContentHierarchy")
+
+  menuOrder     Int           @default(0)     // ordering among siblings
+  template      String?                       // explicit template override
+
+  // ── Timestamps ──
+  publishedAt   DateTime?                     // when it went live
+  scheduledAt   DateTime?                     // future publish date
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // ── Relations ──
+  fieldValues       FieldValue[]
+  revisions         Revision[]
+  terms             ContentTerm[]
+  comments          Comment[]
+  mediaAttachments  ContentMedia[]
+
+  // ── Indexes ──
+  // Primary query: "all published posts for this site, newest first"
+  @@unique([siteId, contentTypeId, slug])
+  @@index([siteId, contentTypeId, status, publishedAt(sort: Desc)])
+  @@index([siteId, slug])
+  @@index([siteId, status, scheduledAt])  // cron: find scheduled entries to publish
+  @@index([authorId])
+  @@map("content_entries")
+}
+
+enum ContentStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  SCHEDULED
+  PRIVATE
+  ARCHIVED
+  TRASH
+}
+
+// ============================================================================
+// 7. REVISIONS
+// ============================================================================
+// Every save creates a snapshot. The ContentEntry row is always the current
+// state. Restoring a revision copies its data back and creates a new revision
+// (so history is never lost).
+//
+// `fieldValues` is a JSON snapshot of all FieldValues at revision time.
+// Storing it as JSON (not as separate FieldValue rows) avoids table bloat
+// and keeps revisions self-contained — a revision is a complete, immutable
+// snapshot you can diff or restore from without JOINs.
+//
+// Retention policy: a cron job prunes revisions beyond a configurable limit
+// (default: keep last 25 per entry + all revisions from the past 30 days).
+// ============================================================================
+
+model Revision {
+  id             String   @id @default(cuid())
+  contentEntryId String
+  contentEntry   ContentEntry @relation(fields: [contentEntryId], references: [id], onDelete: Cascade)
+
+  version        Int                    // monotonically increasing per entry
+  title          String
+  blocks         Json                   // BlockData[] snapshot
+  excerpt        String?  @db.Text
+  fieldValues    Json     @default("{}") // { [fieldKey]: value } snapshot
+
+  authorId       String
+  author         User     @relation(fields: [authorId], references: [id])
+
+  changeNote     String?                // optional: "Fixed typo in intro"
+  createdAt      DateTime @default(now())
+
+  @@unique([contentEntryId, version])
+  @@index([contentEntryId, createdAt(sort: Desc)])
+  @@map("revisions")
+}
+
+// ============================================================================
+// 8. TAXONOMIES & TERMS
+// ============================================================================
+// Taxonomy = a classification system (Category, Tag, Genre, Color, …)
+// Term     = a single value within a taxonomy (Tech, JavaScript, Red, …)
+//
+// `hierarchical`: categories are hierarchical (parent → child), tags are flat.
+// `contentTypes`: which ContentType slugs this taxonomy applies to.
+//                 Stored as String[] — a taxonomy can span multiple types.
+//
+// Why a Taxonomy model instead of hard-coding categories/tags?
+//   - Plugins register custom taxonomies ("genre" for a music site)
+//   - Each taxonomy has its own archive page, URL structure, admin UI
+//   - The ContentTerm join makes any content ↔ any term possible
+// ============================================================================
+
+model Taxonomy {
+  id           String  @id @default(cuid())
+  siteId       String
+  site         Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  slug         String                   // "category", "tag", "genre"
+  name         String                   // "Categories", "Tags"
+  description  String?
+  hierarchical Boolean @default(false)  // categories = true, tags = false
+  isSystem     Boolean @default(false)  // true = "category"/"tag", can't delete
+  isPublic     Boolean @default(true)   // false = internal-only taxonomy
+
+  contentTypes String[]                 // ["post"], ["post","product"], etc.
+
+  // ── Relations ──
+  terms        Term[]
+
+  @@unique([siteId, slug])
+  @@map("taxonomies")
+}
+
+model Term {
+  id          String   @id @default(cuid())
+  taxonomyId  String
+  taxonomy    Taxonomy @relation(fields: [taxonomyId], references: [id], onDelete: Cascade)
+
+  name        String
+  slug        String
+  description String?  @db.Text
+
+  // ── Hierarchy (categories) ──
+  parentId    String?
+  parent      Term?    @relation("TermHierarchy", fields: [parentId], references: [id])
+  children    Term[]   @relation("TermHierarchy")
+
+  sortOrder   Int      @default(0)
+  meta        Json     @default("{}") // term-level metadata (icon, color, image)
+
+  // ── Relations ──
+  contents    ContentTerm[]
+
+  @@unique([taxonomyId, slug])
+  @@index([taxonomyId, sortOrder])
+  @@map("terms")
+}
+
+model ContentTerm {
+  contentEntryId String
+  contentEntry   ContentEntry @relation(fields: [contentEntryId], references: [id], onDelete: Cascade)
+  termId         String
+  term           Term         @relation(fields: [termId], references: [id], onDelete: Cascade)
+  sortOrder      Int          @default(0) // ordering within an entry's terms
+
+  @@id([contentEntryId, termId])
+  @@index([termId])                       // reverse lookup: "all posts in this term"
+  @@map("content_terms")
+}
+
+// ============================================================================
+// 9. MEDIA ASSETS
+// ============================================================================
+// MediaAsset is a first-class entity, not embedded in content.
+// The actual file lives in object storage (S3/MinIO/local).
+// `url` stores the storage path; a service layer resolves it to a full URL
+// (with CDN prefix, signed parameters, etc.)
+//
+// ContentMedia is the join table. Its `role` column distinguishes how media
+// is attached: "featured_image", "gallery", "attachment", "og_image".
+// A single MediaAsset can serve multiple roles across multiple entries.
+//
+// `variants` stores generated sizes: { "thumbnail": { url, w, h }, "medium": … }
+// Generated lazily on first request or eagerly on upload via a queue.
+// ============================================================================
+
+model MediaAsset {
+  id         String  @id @default(cuid())
+  siteId     String
+  site       Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  filename   String                    // original filename
+  mimeType   String                    // "image/jpeg", "application/pdf"
+  size       Int                       // bytes
+  width      Int?                      // image/video dimensions
+  height     Int?
+  duration   Int?                      // audio/video duration in seconds
+  url        String                    // storage path or full URL
+  alt        String?                   // accessibility alt text
+  title      String?                   // display title
+  caption    String?  @db.Text         // rich caption
+  focalPoint Json?                     // { x: 0.5, y: 0.3 } for smart cropping
+  variants   Json     @default("{}")   // generated sizes: { thumb: { url, w, h } }
+  meta       Json     @default("{}")   // EXIF, color palette, etc.
+
+  uploaderId String
+  uploader   User    @relation(fields: [uploaderId], references: [id])
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // ── Relations ──
+  contentAttachments ContentMedia[]
+
+  @@index([siteId, mimeType])
+  @@index([siteId, createdAt(sort: Desc)])
+  @@map("media_assets")
+}
+
+model ContentMedia {
+  contentEntryId String
+  contentEntry   ContentEntry @relation(fields: [contentEntryId], references: [id], onDelete: Cascade)
+  mediaAssetId   String
+  mediaAsset     MediaAsset   @relation(fields: [mediaAssetId], references: [id])
+  role           String       @default("attachment") // "featured_image", "gallery", …
+  sortOrder      Int          @default(0)
+
+  @@id([contentEntryId, mediaAssetId, role])
+  @@map("content_media")
+}
+
+// ============================================================================
+// 10. COMMENTS
+// ============================================================================
+// Threaded comments with moderation workflow.
+// Guest comments (no account required) store name/email/url directly.
+// Registered user comments link via authorId.
+//
+// `ip` and `userAgent` are stored for spam detection (e.g., Akismet-style
+// filtering). They are nullable and can be disabled for privacy compliance.
+// ============================================================================
+
+model Comment {
+  id             String        @id @default(cuid())
+  siteId         String
+  site           Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  contentEntryId String
+  contentEntry   ContentEntry  @relation(fields: [contentEntryId], references: [id], onDelete: Cascade)
+
+  // ── Author (registered or guest) ──
+  authorId       String?
+  author         User?         @relation(fields: [authorId], references: [id])
+  guestName      String?
+  guestEmail     String?
+  guestUrl       String?
+
+  body           String        @db.Text
+  status         CommentStatus @default(PENDING)
+
+  // ── Threading ──
+  parentId       String?
+  parent         Comment?      @relation("CommentThread", fields: [parentId], references: [id])
+  replies        Comment[]     @relation("CommentThread")
+
+  // ── Spam detection metadata ──
+  ip             String?
+  userAgent      String?
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([contentEntryId, status, createdAt(sort: Desc)])
+  @@index([siteId, status])
+  @@map("comments")
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  SPAM
+  TRASH
+}
+
+// ============================================================================
+// 11. MENUS & MENU ITEMS
+// ============================================================================
+// Navigation menus with hierarchical items.
+// `location` is a theme-registered slot: "primary", "footer", "mobile".
+//
+// MenuItem.type determines what the item links to:
+//   "custom"   → uses `url` directly
+//   "content"  → links to a ContentEntry (objectId = contentEntryId)
+//   "taxonomy" → links to a Term archive (objectId = termId)
+//
+// Why not store menus as JSON?
+//   - Menu items need individual IDs for drag-drop reordering in the admin
+//   - Hierarchical relations (parentId) are cleaner as rows than nested JSON
+//   - Resolving "content" items to their current URL requires a JOIN anyway
+// ============================================================================
+
+model Menu {
+  id       String     @id @default(cuid())
+  siteId   String
+  site     Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  name     String                      // "Main Navigation", "Footer Links"
+  location String                      // theme-defined slot
+
+  // ── Relations ──
+  items    MenuItem[]
+
+  @@unique([siteId, location])
+  @@map("menus")
+}
+
+model MenuItem {
+  id       String @id @default(cuid())
+  menuId   String
+  menu     Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  label    String
+  url      String?                     // for type = "custom"
+  target   String?                     // "_blank", "_self"
+  type     String                      // "custom" | "content" | "taxonomy"
+  objectId String?                     // FK to content entry or term (polymorphic)
+
+  // ── Hierarchy ──
+  parentId String?
+  parent   MenuItem? @relation("MenuItemHierarchy", fields: [parentId], references: [id])
+  children MenuItem[] @relation("MenuItemHierarchy")
+
+  sortOrder Int     @default(0)
+  cssClass  String?                    // additional CSS classes
+  openInNewTab Boolean @default(false)
+
+  @@index([menuId, sortOrder])
+  @@map("menu_items")
+}
+
+// ============================================================================
+// 12. SETTINGS
+// ============================================================================
+// Key-value settings organized by group. Tenant-scoped (siteId) with null
+// siteId for global/system-level defaults.
+//
+// Groups: "general", "reading", "writing", "discussion", "media",
+//         "permalinks", "seo", or plugin-defined groups.
+//
+// value is Json so it preserves types (numbers, booleans, arrays, objects).
+//
+// Examples:
+//   { group: "general",    key: "site_title",       value: "My Blog" }
+//   { group: "reading",    key: "posts_per_page",   value: 10 }
+//   { group: "discussion", key: "comments_enabled", value: true }
+//   { group: "permalinks", key: "post_structure",   value: "/blog/:slug" }
+// ============================================================================
+
+model Setting {
+  id      String  @id @default(cuid())
+  siteId  String?
+  site    Site?   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  group   String                       // "general", "reading", …
+  key     String                       // "site_title", "posts_per_page", …
+  value   Json                         // typed value
+
+  @@unique([siteId, group, key])
+  @@map("settings")
+}
+
+// ============================================================================
+// 13. PLUGIN REGISTRY
+// ============================================================================
+// Tracks which plugins are installed and active per site.
+// Plugin code lives on disk (plugins/ directory). This table stores runtime
+// state: is it active? what are its settings? what version?
+//
+// `settings` is Json because each plugin defines its own settings schema
+// (declared in plugin.json). Normalizing plugin settings into separate
+// tables would require migrations for every plugin — defeating the purpose.
+//
+// `permissions` lists any custom permissions the plugin registered.
+// On activation these are seeded into the Permission table.
+// On uninstall they're removed.
+// ============================================================================
+
+model PluginInstall {
+  id          String  @id @default(cuid())
+  siteId      String
+  site        Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  slug        String                   // matches directory name: "seo-toolkit"
+  version     String                   // installed version: "1.2.0"
+  isActive    Boolean @default(false)
+  settings    Json    @default("{}")   // plugin-specific configuration
+  permissions String[] @default([])    // permission slugs this plugin registered
+
+  activatedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([siteId, slug])
+  @@map("plugin_installs")
+}
+
+// ============================================================================
+// 14. THEME REGISTRY
+// ============================================================================
+// Same pattern as plugins: code on disk, state in DB.
+// Only one theme can be active per site (isActive enforced at the app layer).
+//
+// `customizations` stores theme-specific settings (colors, fonts, layout
+// options) defined by the theme's settings JSON Schema in theme.json.
+//
+// `templateOverrides` records which templates the admin has customized
+// via a future "template editor" feature: { "single": "custom-single-v2" }.
+// ============================================================================
+
+model ThemeInstall {
+  id                String  @id @default(cuid())
+  siteId            String
+  site              Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  slug              String                  // matches directory name: "developer-blog"
+  version           String
+  isActive          Boolean @default(false) // only one active per site
+  customizations    Json    @default("{}")  // theme options (colors, layout, fonts)
+  templateOverrides Json    @default("{}")  // per-template customizations
+
+  activatedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([siteId, slug])
+  @@index([siteId, isActive])
+  @@map("theme_installs")
+}
+
+// ============================================================================
+// 15. BLOCK TEMPLATES (Reusable Blocks / Patterns)
+// ============================================================================
+// A BlockTemplate is a saved arrangement of blocks that can be inserted
+// into any content entry. WordPress calls these "Reusable Blocks" or
+// "Patterns".
+//
+// Two modes:
+//   - REUSABLE: shared by reference. Editing the template updates every
+//     entry that uses it. Stored as a block reference: { type: "core/template",
+//     attributes: { templateId: "..." } }. Rendered by looking up the template.
+//   - PATTERN: copied into the entry on insertion. No ongoing link.
+//     Just a convenient starting point.
+//
+// `category` helps organize in the inserter: "text", "hero", "testimonial", …
+// `source` tracks who created it: "core", "theme", or a plugin slug.
+// ============================================================================
+
+model BlockTemplate {
+  id          String   @id @default(cuid())
+  siteId      String
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  slug        String
+  title       String
+  description String?
+  blocks      Json                      // BlockData[] — the template content
+  category    String   @default("uncategorized")
+  mode        BlockTemplateMode @default(PATTERN)
+  previewUrl  String?                   // screenshot for the inserter
+  source      String   @default("user") // "core", "theme", plugin slug, "user"
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([siteId, slug])
+  @@index([siteId, category])
+  @@map("block_templates")
+}
+
+enum BlockTemplateMode {
+  REUSABLE  // shared by reference, editing updates all usages
+  PATTERN   // copied on insertion, no ongoing link
+}
