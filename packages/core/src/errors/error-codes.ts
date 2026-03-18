@@ -1,0 +1,25 @@
+/** Exhaustive error codes for client consumption and i18n */
+export const ErrorCodes = {
+  // Auth
+  UNAUTHENTICATED: "UNAUTHENTICATED",
+  FORBIDDEN: "FORBIDDEN",
+  INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
+  ACCOUNT_DISABLED: "ACCOUNT_DISABLED",
+  SESSION_EXPIRED: "SESSION_EXPIRED",
+
+  // Validation
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  DUPLICATE_SLUG: "DUPLICATE_SLUG",
+
+  // Resources
+  NOT_FOUND: "NOT_FOUND",
+  CONFLICT: "CONFLICT",
+
+  // System
+  INTERNAL_ERROR: "INTERNAL_ERROR",
+  RATE_LIMITED: "RATE_LIMITED",
+  SITE_NOT_FOUND: "SITE_NOT_FOUND",
+  SITE_INACTIVE: "SITE_INACTIVE",
+} as const;
+
+export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
