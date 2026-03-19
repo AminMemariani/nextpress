@@ -409,6 +409,12 @@ model ContentEntry {
   comments          Comment[]
   mediaAttachments  ContentMedia[]
 
+  // ── Search ──
+  // PostgreSQL tsvector for full-text search. Updated via SQL trigger
+  // (not managed by Prisma — created in a manual migration).
+  // See: packages/db/prisma/migrations/add_search_vector.sql
+  searchVector  Unsupported("tsvector")?
+
   // ── Indexes ──
   // Primary query: "all published posts for this site, newest first"
   @@unique([siteId, contentTypeId, slug])

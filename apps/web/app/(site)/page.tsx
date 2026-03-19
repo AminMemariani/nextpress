@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { resolveSite } from "@/lib/site/resolve";
 import { themeManager } from "@nextpress/core/theme/theme-manager";
 import { resolveTemplate } from "@nextpress/core/theme/template-resolver";
-import { prisma } from "@nextpress/db";
+import { getCachedEntryList, getCachedThemeInstall } from "@/lib/cache/cached-queries";
 import { buildHomePageMetadata } from "@/lib/seo/metadata";
 import { JsonLd } from "@/lib/seo/structured-data";
 import { buildSiteStructuredData } from "@nextpress/core/seo/structured-data";
@@ -10,13 +10,9 @@ import { seoService } from "@nextpress/core/seo/seo-service";
 import type { TemplateContext, TemplateEntry } from "@nextpress/core/theme/theme-types";
 import type { Metadata } from "next";
 
-// ── Metadata ──
-
 export async function generateMetadata(): Promise<Metadata> {
   return buildHomePageMetadata();
 }
-
-// ── Page ──
 
 export default async function HomePage() {
   const h = await headers();
@@ -25,31 +21,15 @@ export default async function HomePage() {
 
   const theme = await themeManager.getActive(site.id);
 
-  const entries = await prisma.contentEntry.findMany({
-    where: { siteId: site.id, status: "PUBLISHED" },
-    orderBy: { publishedAt: "desc" },
-    take: 10,
-    select: {
-      id: true, title: true, slug: true, excerpt: true, blocks: true,
-      status: true, template: true, publishedAt: true, createdAt: true,
-      contentType: { select: { slug: true, nameSingular: true } },
-      author: { select: { name: true, displayName: true, image: true } },
-      fieldValues: { select: { value: true, fieldDefinition: { select: { key: true } } } },
-      terms: { select: { term: { select: { name: true, slug: true, taxonomy: { select: { slug: true } } } } } },
-      mediaAttachments: {
-        where: { role: "featured_image" }, take: 1,
-        select: { mediaAsset: { select: { url: true, alt: true, width: true, height: true } } },
-      },
-    },
-  });
-
-  const install = await prisma.themeInstall.findFirst({
-    where: { siteId: site.id, isActive: true },
-  });
+  // CACHED: entries and theme install
+  const [entries, install] = await Promise.all([
+    getCachedEntryList(site.id, { limit: 10 }),
+    getCachedThemeInstall(site.id),
+  ]);
 
   const context: TemplateContext = {
     entry: null,
-    entries: entries.map(toTemplateEntry),
+    entries: (entries ?? []).map(toTemplateEntry),
     site: { name: site.name, tagline: site.tagline, url: site.domain ?? `${site.slug}.nextpress.app` },
     customizations: (install?.customizations as Record<string, unknown>) ?? {},
   };

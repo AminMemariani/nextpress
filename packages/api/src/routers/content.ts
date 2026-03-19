@@ -13,7 +13,28 @@ import {
   updateContentEntrySchema,
   listContentEntriesSchema,
   statusTransitionSchema,
+  type ContentEntryDto,
 } from "@nextpress/core/content/content-types";
+
+/**
+ * Revalidate cache tags after a content mutation.
+ * Imported dynamically to avoid pulling Next.js APIs into the package.
+ */
+async function revalidateEntry(entry: ContentEntryDto) {
+  try {
+    const { revalidateForEntry } = await import("@/lib/cache/revalidate-content");
+    revalidateForEntry(entry);
+  } catch {
+    // revalidation is best-effort; fails silently outside Next.js
+  }
+}
+
+async function revalidateDeletion(siteId: string, typeSlug: string) {
+  try {
+    const { revalidateForDeletion } = await import("@/lib/cache/revalidate-content");
+    revalidateForDeletion(siteId, typeSlug);
+  } catch {}
+}
 
 export const contentRouter = router({
   // ── Public read operations ──
@@ -55,7 +76,9 @@ export const contentRouter = router({
   create: authedProcedure
     .input(createContentEntrySchema)
     .mutation(async ({ ctx, input }) => {
-      return contentService.create(ctx.auth, input);
+      const entry = await contentService.create(ctx.auth, input);
+      if (entry.status === "PUBLISHED") await revalidateEntry(entry);
+      return entry;
     }),
 
   /** Update an existing content entry (creates revision) */
@@ -67,7 +90,9 @@ export const contentRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return contentService.update(ctx.auth, input.id, input.data);
+      const entry = await contentService.update(ctx.auth, input.id, input.data);
+      if (entry.status === "PUBLISHED") await revalidateEntry(entry);
+      return entry;
     }),
 
   /**
@@ -139,7 +164,9 @@ export const contentRouter = router({
   publish: authedProcedure
     .input(z.object({ id: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
-      return contentService.publish(ctx.auth, input.id);
+      const entry = await contentService.publish(ctx.auth, input.id);
+      await revalidateEntry(entry);
+      return entry;
     }),
 
   /** Schedule */
@@ -165,7 +192,9 @@ export const contentRouter = router({
   trash: authedProcedure
     .input(z.object({ id: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
-      return contentService.trash(ctx.auth, input.id);
+      const entry = await contentService.trash(ctx.auth, input.id);
+      await revalidateEntry(entry); // remove from public pages
+      return entry;
     }),
 
   /** Restore from trash */
@@ -179,7 +208,10 @@ export const contentRouter = router({
   delete: authedProcedure
     .input(z.object({ id: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
+      // Get entry info before deletion for revalidation
+      const entry = await contentService.getById(ctx.auth.siteId, input.id);
       await contentService.delete(ctx.auth, input.id);
+      await revalidateDeletion(ctx.auth.siteId, entry.contentType.slug);
       return { success: true };
     }),
 
@@ -206,7 +238,9 @@ export const contentRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return reviewWorkflow.approve(ctx.auth, input.id, input.note);
+      const entry = await reviewWorkflow.approve(ctx.auth, input.id, input.note);
+      await revalidateEntry(entry); // now published → appears on public site
+      return entry;
     }),
 
   /** Request changes (PENDING_REVIEW → DRAFT + note) */
