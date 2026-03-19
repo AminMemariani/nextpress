@@ -1,0 +1,43 @@
+import { z } from "zod";
+import {
+  router,
+  authedProcedure,
+  permissionProcedure,
+  publicProcedure,
+} from "../trpc";
+import { settingsService } from "@nextpress/core/settings/settings-service";
+import { updateSettingsSchema } from "@nextpress/core/settings/settings-types";
+
+export const settingsRouter = router({
+  /** Get settings for a group */
+  getGroup: authedProcedure
+    .input(z.object({ group: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return settingsService.getGroup(ctx.auth.siteId, input.group);
+    }),
+
+  /** Get all settings (admin settings page) */
+  getAll: permissionProcedure("manage_settings")
+    .query(async ({ ctx }) => {
+      return settingsService.getAll(ctx.auth.siteId);
+    }),
+
+  /** Get available setting groups (with field definitions) */
+  getGroups: authedProcedure.query(async () => {
+    return settingsService.getGroups();
+  }),
+
+  /** Update settings for a group */
+  update: permissionProcedure("manage_settings")
+    .input(updateSettingsSchema)
+    .mutation(async ({ ctx, input }) => {
+      return settingsService.updateGroup(ctx.auth, input);
+    }),
+
+  /** Get a single setting (public, for reading config) */
+  get: publicProcedure
+    .input(z.object({ siteId: z.string().cuid(), group: z.string(), key: z.string() }))
+    .query(async ({ input }) => {
+      return settingsService.get(input.siteId, input.group, input.key);
+    }),
+});

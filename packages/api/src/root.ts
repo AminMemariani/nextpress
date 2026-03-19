@@ -8,6 +8,8 @@ import { pluginRouter } from "./routers/plugin";
 import { mediaRouter } from "./routers/media";
 import { searchRouter } from "./routers/search";
 import { commentRouter } from "./routers/comment";
+import { settingsRouter } from "./routers/settings";
+import { menuRouter } from "./routers/menu";
 
 export const appRouter = router({
   content: contentRouter,
@@ -19,6 +21,8 @@ export const appRouter = router({
   media: mediaRouter,
   search: searchRouter,
   comment: commentRouter,
+  settings: settingsRouter,
+  menu: menuRouter,
 });
 
 export type AppRouter = typeof appRouter;
