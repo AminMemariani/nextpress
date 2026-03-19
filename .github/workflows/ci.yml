@@ -53,8 +53,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Generate Prisma client
+        run: pnpm --filter @nextpress/db exec prisma generate
       - name: Run unit tests with coverage
-        run: pnpm --filter @nextpress/core exec vitest run --reporter=verbose --coverage
+        run: pnpm --filter @nextpress/core exec vitest run --reporter=verbose --coverage --dir src/__tests__/unit
         env:
           SKIP_DB: "true"
         continue-on-error: true
@@ -102,11 +104,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Generate Prisma client
         run: pnpm --filter @nextpress/db exec prisma generate
-      - name: Deploy migrations
-        run: pnpm --filter @nextpress/db exec prisma migrate deploy
-        continue-on-error: true
+      - name: Push schema to test database
+        run: pnpm --filter @nextpress/db exec prisma db push --skip-generate
       - name: Run integration tests
-        run: pnpm --filter @nextpress/core exec vitest run --reporter=verbose
+        run: pnpm --filter @nextpress/core exec vitest run --reporter=verbose --dir src/__tests__/integration
         continue-on-error: true
 
   # ── Gate ──
