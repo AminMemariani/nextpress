@@ -1,0 +1,21 @@
+{
+  "name": "@nextpress/api",
+  "version": "0.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nextpress/core": "workspace:*",
+    "@nextpress/db": "workspace:*",
+    "@trpc/server": "^11.0.0",
+    "superjson": "^2.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^3.0.0"
+  }
+}
