@@ -74,6 +74,11 @@ export const contentStatusSchema = z.enum([
 export type ContentStatusInput = z.infer<typeof contentStatusSchema>;
 
 // ── Block Data ──
+// BlockData is defined in @nextpress/blocks (canonical source).
+// Re-exported here so core consumers don't need to import from blocks.
+
+import type { BlockData as _BlockData } from "@nextpress/blocks";
+export type BlockData = _BlockData;
 
 export const blockDataSchema: z.ZodType<BlockData> = z.lazy(() =>
   z.object({
@@ -83,10 +88,3 @@ export const blockDataSchema: z.ZodType<BlockData> = z.lazy(() =>
     innerBlocks: z.array(blockDataSchema).default([]),
   }),
 );
-
-export interface BlockData {
-  id: string;
-  type: string;
-  attributes: Record<string, unknown>;
-  innerBlocks: BlockData[];
-}

@@ -127,9 +127,6 @@ importers:
 
   packages/blocks:
     dependencies:
-      '@nextpress/core':
-        specifier: workspace:*
-        version: link:../core
       isomorphic-dompurify:
         specifier: ^2.0.0
         version: 2.36.0

@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "paths": {
+      "@nextpress/core": ["../core/src"],
+      "@nextpress/core/*": ["../core/src/*"],
+      "@nextpress/db": ["../db/src"],
+      "@nextpress/db/*": ["../db/src/*"],
+      "@nextpress/blocks": ["../blocks/src"],
+      "@nextpress/blocks/*": ["../blocks/src/*"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

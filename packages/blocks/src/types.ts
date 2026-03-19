@@ -15,10 +15,20 @@
 
 import { z } from "zod";
 import type { ComponentType } from "react";
-import type { BlockData } from "@nextpress/core/validation/schemas";
 
-// Re-export for convenience
-export type { BlockData } from "@nextpress/core/validation/schemas";
+/**
+ * BlockData — the universal content block structure.
+ *
+ * Defined here in packages/blocks (not imported from core) to break
+ * the circular dependency: core depends on blocks, blocks must NOT
+ * depend on core. Core re-exports this type from its own schemas.
+ */
+export interface BlockData {
+  id: string;
+  type: string;
+  attributes: Record<string, unknown>;
+  innerBlocks: BlockData[];
+}
 
 // ── Attribute type extraction ──
 
