@@ -27,9 +27,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo lint
@@ -42,9 +44,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @nextpress/core vitest run --reporter=verbose --coverage
@@ -56,6 +60,7 @@ jobs:
         with:
           name: unit-coverage
           path: packages/core/coverage/
+          if-no-files-found: ignore
 
   # ── Integration tests (needs DB) ──
   integration-tests:
@@ -77,9 +82,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @nextpress/db prisma migrate deploy
@@ -108,9 +115,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @nextpress/db prisma generate
@@ -120,7 +129,6 @@ jobs:
       - name: Build app
         run: pnpm --filter web build
         env:
-          # Next.js build needs these at build time
           SKIP_ENV_VALIDATION: "true"
       - name: Run E2E tests
         run: pnpm --filter web playwright test
@@ -131,6 +139,7 @@ jobs:
           name: playwright-report
           path: apps/web/playwright-report/
           retention-days: 7
+          if-no-files-found: ignore
 
   # ── Gate: all checks must pass before merge ──
   ci-passed:
@@ -145,7 +154,11 @@ jobs:
              [[ "${{ needs.unit-tests.result }}" != "success" ]] || \
              [[ "${{ needs.integration-tests.result }}" != "success" ]] || \
              [[ "${{ needs.e2e-tests.result }}" != "success" ]]; then
-            echo "One or more CI jobs failed."
+            echo "One or more CI jobs failed:"
+            echo "  lint-and-typecheck: ${{ needs.lint-and-typecheck.result }}"
+            echo "  unit-tests: ${{ needs.unit-tests.result }}"
+            echo "  integration-tests: ${{ needs.integration-tests.result }}"
+            echo "  e2e-tests: ${{ needs.e2e-tests.result }}"
             exit 1
           fi
           echo "All CI jobs passed."
