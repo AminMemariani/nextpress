@@ -6,9 +6,18 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nextpress_test
   TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nextpress_test
+  NEXTAUTH_SECRET: ci-test-secret-not-for-production-use-only
+  NEXTAUTH_URL: http://localhost:3000
+  ADMIN_PASSWORD: ci-test-password-12chars
+  CRON_SECRET: ci-cron-secret
+  REVALIDATION_SECRET: ci-revalidation-secret
 
 jobs:
   # ── Fast checks (no DB) ──
@@ -21,7 +30,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "pnpm"
+          cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo lint
       - run: pnpm turbo typecheck
@@ -36,12 +45,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "pnpm"
+          cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @nextpress/core test -- --run --reporter=verbose
+      - run: pnpm --filter @nextpress/core vitest run --reporter=verbose --coverage
         env:
-          # Unit tests don't need DB
           SKIP_DB: "true"
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-coverage
+          path: packages/core/coverage/
 
   # ── Integration tests (needs DB) ──
   integration-tests:
@@ -66,12 +80,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "pnpm"
+          cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @nextpress/db prisma migrate deploy
       - run: pnpm --filter @nextpress/db prisma db seed
-      - run: pnpm --filter @nextpress/core test -- --run --reporter=verbose
-      - run: pnpm --filter @nextpress/api test -- --run --reporter=verbose
+      - run: pnpm --filter @nextpress/core vitest run --reporter=verbose
+      - run: pnpm --filter @nextpress/api vitest run --reporter=verbose
 
   # ── E2E tests (full app) ──
   e2e-tests:
@@ -97,10 +111,41 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "pnpm"
+          cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @nextpress/db prisma generate
       - run: pnpm --filter @nextpress/db prisma migrate deploy
       - run: pnpm --filter @nextpress/db prisma db seed
       - run: npx playwright install --with-deps chromium
-      - run: pnpm --filter web build
-      - run: pnpm --filter web playwright test
+      - name: Build app
+        run: pnpm --filter web build
+        env:
+          # Next.js build needs these at build time
+          SKIP_ENV_VALIDATION: "true"
+      - name: Run E2E tests
+        run: pnpm --filter web playwright test
+      - name: Upload E2E report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
+
+  # ── Gate: all checks must pass before merge ──
+  ci-passed:
+    name: CI Passed
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [lint-and-typecheck, unit-tests, integration-tests, e2e-tests]
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.lint-and-typecheck.result }}" != "success" ]] || \
+             [[ "${{ needs.unit-tests.result }}" != "success" ]] || \
+             [[ "${{ needs.integration-tests.result }}" != "success" ]] || \
+             [[ "${{ needs.e2e-tests.result }}" != "success" ]]; then
+            echo "One or more CI jobs failed."
+            exit 1
+          fi
+          echo "All CI jobs passed."

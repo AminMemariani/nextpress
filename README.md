@@ -4,15 +4,16 @@
 
 **The modern, open-source CMS for the Next.js ecosystem.**
 
-[![CI](https://github.com/nextpress/nextpress/actions/workflows/ci.yml/badge.svg)](https://github.com/nextpress/nextpress/actions/workflows/ci.yml)
+<!-- Update "cyberhonig/nextpress" to your actual GitHub org/repo -->
+[![CI](https://github.com/cyberhonig/nextpress/actions/workflows/ci.yml/badge.svg)](https://github.com/cyberhonig/nextpress/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-14+-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
-[![Coverage](https://img.shields.io/badge/Coverage-Unit%20%7C%20Integration%20%7C%20E2E-blue)]()
-[![Code Style](https://img.shields.io/badge/Code_Style-Prettier-ff69b4?logo=prettier&logoColor=white)](https://prettier.io/)
+[![Tests](https://img.shields.io/badge/Tests-Unit%20%C2%B7%20Integration%20%C2%B7%20E2E-blue)](https://github.com/cyberhonig/nextpress/actions/workflows/ci.yml)
+[![Code Style: Prettier](https://img.shields.io/badge/Code%20Style-Prettier-ff69b4?logo=prettier&logoColor=white)](https://prettier.io/)
 
 WordPress taught the world that anyone can publish on the web. NextPress carries that mission forward with a modern foundation: **type-safe TypeScript**, **server-rendered React**, **structured block content**, and an **API-first architecture** that works for both traditional websites and headless frontends.
 
