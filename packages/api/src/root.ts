@@ -7,6 +7,7 @@ import { userRouter } from "./routers/user";
 import { pluginRouter } from "./routers/plugin";
 import { mediaRouter } from "./routers/media";
 import { searchRouter } from "./routers/search";
+import { commentRouter } from "./routers/comment";
 
 export const appRouter = router({
   content: contentRouter,
@@ -17,6 +18,7 @@ export const appRouter = router({
   plugin: pluginRouter,
   media: mediaRouter,
   search: searchRouter,
+  comment: commentRouter,
 });
 
 export type AppRouter = typeof appRouter;
