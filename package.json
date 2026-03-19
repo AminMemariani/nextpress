@@ -10,6 +10,9 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test"
   },
+  "devDependencies": {
+    "turbo": "^2.5.0"
+  },
   "keywords": [],
   "author": "",
   "license": "MIT",
