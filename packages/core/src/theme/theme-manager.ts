@@ -209,5 +209,5 @@ function resolveThemesDir(): string {
 }
 
 function DefaultLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return children;
 }

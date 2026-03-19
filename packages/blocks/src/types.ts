@@ -92,8 +92,13 @@ export interface BlockDefinition<
   /** Who registered: "core", theme slug, or plugin slug */
   source: string;
 
-  /** Server-safe render component. Null = editor-only block. */
-  renderComponent: ComponentType<BlockRenderProps<z.infer<TSchema>>> | null;
+  /**
+   * Server-safe render component. Null = editor-only block.
+   * Typed as ComponentType<BlockRenderProps> (generic attributes) because
+   * the registry stores all blocks homogeneously. Type safety for attributes
+   * is enforced by the Zod schema at runtime, not at the component type level.
+   */
+  renderComponent: ComponentType<BlockRenderProps<any>> | null;
 }
 
 // ── Component Props ──
