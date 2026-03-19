@@ -29,16 +29,16 @@
 }
 
 /* ── Base ── */
-.np-2026 {
+.np-twentytwentysix {
   font-family: var(--np-font-sans);
   color: var(--np-text);
   background: var(--np-bg);
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;
 }
-.np-2026.np-font-georgia { font-family: var(--np-font-serif); }
-.np-2026.np-font-merriweather { font-family: "Merriweather", var(--np-font-serif); }
-.np-2026.np-font-inter { font-family: var(--np-font-sans); }
+.np-twentytwentysix.np-font-georgia { font-family: var(--np-font-serif); }
+.np-twentytwentysix.np-font-merriweather { font-family: "Merriweather", var(--np-font-serif); }
+.np-twentytwentysix.np-font-inter { font-family: var(--np-font-sans); }
 
 /* ── Container ── */
 .np-container {

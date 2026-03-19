@@ -226,7 +226,7 @@ importers:
 
   themes/default: {}
 
-  themes/twentysixteen: {}
+  themes/twentytwentysix: {}
 
   tooling/eslint-config: {}
 

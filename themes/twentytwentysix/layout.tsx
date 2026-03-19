@@ -12,7 +12,7 @@ export default function ThemeLayout({ children, customizations }: Props) {
   const dark = customizations.darkMode as boolean ?? false;
 
   return (
-    <div className={`np-2026 np-font-${font} ${dark ? "np-dark" : ""} min-h-screen flex flex-col`}>
+    <div className={`np-twentytwentysix np-font-${font} ${dark ? "np-dark" : ""} min-h-screen flex flex-col`}>
       <ThemeHeader siteName={customizations.siteName as string} />
       <div className="np-container flex-1">
         {children}
