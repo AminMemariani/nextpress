@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nextpress_test
+  TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nextpress_test
+
+jobs:
+  # ── Fast checks (no DB) ──
+  lint-and-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo lint
+      - run: pnpm turbo typecheck
+
+  # ── Unit tests (no DB) ──
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @nextpress/core test -- --run --reporter=verbose
+        env:
+          # Unit tests don't need DB
+          SKIP_DB: "true"
+
+  # ── Integration tests (needs DB) ──
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nextpress_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @nextpress/db prisma migrate deploy
+      - run: pnpm --filter @nextpress/db prisma db seed
+      - run: pnpm --filter @nextpress/core test -- --run --reporter=verbose
+      - run: pnpm --filter @nextpress/api test -- --run --reporter=verbose
+
+  # ── E2E tests (full app) ──
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [integration-tests]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nextpress_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @nextpress/db prisma migrate deploy
+      - run: pnpm --filter @nextpress/db prisma db seed
+      - run: npx playwright install --with-deps chromium
+      - run: pnpm --filter web build
+      - run: pnpm --filter web playwright test
