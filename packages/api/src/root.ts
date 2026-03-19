@@ -10,6 +10,10 @@ import { searchRouter } from "./routers/search";
 import { commentRouter } from "./routers/comment";
 import { settingsRouter } from "./routers/settings";
 import { menuRouter } from "./routers/menu";
+import { taxonomyRouter } from "./routers/taxonomy";
+import { themeRouter } from "./routers/theme";
+import { siteRouter } from "./routers/site";
+import { blockTemplateRouter } from "./routers/block-template";
 
 export const appRouter = router({
   content: contentRouter,
@@ -23,6 +27,10 @@ export const appRouter = router({
   comment: commentRouter,
   settings: settingsRouter,
   menu: menuRouter,
+  taxonomy: taxonomyRouter,
+  theme: themeRouter,
+  site: siteRouter,
+  blockTemplate: blockTemplateRouter,
 });
 
 export type AppRouter = typeof appRouter;
