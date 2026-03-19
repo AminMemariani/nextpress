@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 
-interface CommandItem {
+export interface CommandItem {
   id: string;
   label: string;
   description?: string;

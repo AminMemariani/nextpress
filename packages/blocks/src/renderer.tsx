@@ -18,7 +18,7 @@
  *   - Inner blocks recurse naturally (React's component tree handles depth).
  */
 
-import type { BlockData } from "@nextpress/core/validation/schemas";
+import type { BlockData } from "./types";
 import {
   getBlockDefinition,
   migrateBlockAttributes,

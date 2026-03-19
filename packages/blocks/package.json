@@ -12,7 +12,8 @@
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "@types/node": "^22.0.0"
   },
   "peerDependencies": {
     "react": "^18.0.0"
