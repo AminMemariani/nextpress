@@ -541,48 +541,71 @@ function validateStatusTransition(
   }
 }
 
-/** Save field values (upsert pattern) */
+/**
+ * Save field values using Prisma transaction client.
+ *
+ * The tx type from $transaction is Omit<PrismaClient, runtime methods>.
+ * We use the full PrismaClient type and access fieldValue through it.
+ * The Json column accepts unknown values — Prisma's InputJsonValue is
+ * the correct type, but since we've already validated via Zod, we
+ * cast through InputJsonValue explicitly.
+ */
 async function saveFieldValues(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
   contentEntryId: string,
   definitions: Array<{ id: string; key: string }>,
   values: Record<string, unknown>,
 ): Promise<void> {
+  // Use prisma directly within the transaction callback scope.
+  // The `tx` parameter IS a PrismaClient-compatible object.
+  const client = tx as typeof prisma;
+
   for (const def of definitions) {
     const value = values[def.key];
     if (value === undefined) continue;
 
-    await (tx as any).fieldValue.upsert({
+    // Prisma's Json type accepts string | number | boolean | object | array | null
+    const jsonValue = value as Parameters<typeof client.fieldValue.create>[0]["data"]["value"];
+
+    await client.fieldValue.upsert({
       where: {
         contentEntryId_fieldDefinitionId: {
           contentEntryId,
           fieldDefinitionId: def.id,
         },
       },
-      update: { value: value as any },
+      update: { value: jsonValue },
       create: {
         contentEntryId,
         fieldDefinitionId: def.id,
-        value: value as any,
+        value: jsonValue,
       },
     });
   }
 }
 
-/** Map full Prisma result to ContentEntryDto */
-function toFullDto(entry: any): ContentEntryDto {
+// ── Prisma result type for full content entry select ──
+
+import type { Prisma } from "@prisma/client";
+
+type FullEntryResult = Prisma.ContentEntryGetPayload<{
+  select: typeof import("./content-queries").CONTENT_FULL_SELECT;
+}>;
+
+/** Map Prisma result to ContentEntryDto with proper typing */
+function toFullDto(entry: FullEntryResult): ContentEntryDto {
   const fields: Record<string, unknown> = {};
-  for (const fv of entry.fieldValues ?? []) {
+  for (const fv of entry.fieldValues) {
     fields[fv.fieldDefinition.key] = fv.value;
   }
 
-  const featuredMedia = entry.mediaAttachments?.[0]?.mediaAsset ?? null;
+  const featuredMedia = entry.mediaAttachments[0]?.mediaAsset ?? null;
 
   return {
     id: entry.id,
     siteId: entry.siteId,
     contentType: entry.contentType,
-    status: entry.status,
+    status: entry.status as ContentEntryDto["status"],
     title: entry.title,
     slug: entry.slug,
     excerpt: entry.excerpt,
@@ -597,13 +620,13 @@ function toFullDto(entry: any): ContentEntryDto {
     createdAt: entry.createdAt,
     updatedAt: entry.updatedAt,
     fields,
-    terms: (entry.terms ?? []).map((ct: any) => ({
+    terms: entry.terms.map((ct) => ({
       id: ct.term.id,
       name: ct.term.name,
       slug: ct.term.slug,
       taxonomy: ct.term.taxonomy,
     })),
     featuredImage: featuredMedia,
-    revisionCount: entry._count?.revisions ?? 0,
+    revisionCount: entry._count.revisions,
   };
 }

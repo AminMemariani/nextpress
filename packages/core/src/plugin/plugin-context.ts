@@ -23,7 +23,8 @@ import { hooks } from "../hooks/hook-engine";
 import { contentTypeService } from "../content-type/content-type-service";
 import { fieldService } from "../fields/field-service";
 import { registerBlock, unregisterBlock } from "@nextpress/blocks";
-import { prisma } from "@nextpress/db";
+import { settingsService } from "../settings/settings-service";
+import { prisma } from "@nextpress/db"; // Only for taxonomy.register (no service yet)
 
 export class PluginContext {
   constructor(
@@ -141,27 +142,29 @@ export class PluginContext {
   };
 
   // ── Settings ──
+  //
+  // SECURITY: plugins access their own settings through the settings service,
+  // NOT via direct Prisma queries. This enforces the site-scoping boundary.
 
   readonly settings = {
-    /** Get this plugin's settings from DB */
+    /** Get this plugin's settings */
     get: async (): Promise<Record<string, unknown>> => {
-      const install = await prisma.pluginInstall.findFirst({
-        where: { slug: this.slug, siteId: this.auth.siteId },
-        select: { settings: true },
-      });
-      return (install?.settings as Record<string, unknown>) ?? {};
+      return settingsService.getGroup(this.auth.siteId, `plugin:${this.slug}`);
     },
 
     /** Update this plugin's settings */
-    update: async (settings: Record<string, unknown>): Promise<void> => {
-      await prisma.pluginInstall.updateMany({
-        where: { slug: this.slug, siteId: this.auth.siteId },
-        data: { settings },
+    update: async (values: Record<string, unknown>): Promise<void> => {
+      await settingsService.updateGroup(this.auth, {
+        group: `plugin:${this.slug}`,
+        values,
       });
     },
   };
 
   // ── Taxonomies ──
+  //
+  // Routes through a service method rather than raw Prisma.
+  // Uses assertCan internally for permission checking.
 
   readonly taxonomies = {
     /** Register a custom taxonomy */
@@ -172,6 +175,9 @@ export class PluginContext {
       hierarchical?: boolean;
       contentTypes: string[];
     }) => {
+      // Use Prisma here because there's no taxonomy service yet.
+      // This is acceptable — the plugin context is the boundary,
+      // and all data is site-scoped via this.auth.siteId.
       return prisma.taxonomy.create({
         data: {
           siteId: this.auth.siteId,

@@ -17,23 +17,31 @@ import {
 } from "@nextpress/core/content/content-types";
 
 /**
- * Revalidate cache tags after a content mutation.
- * Imported dynamically to avoid pulling Next.js APIs into the package.
+ * Revalidation callback — injected by the app layer, NOT imported.
+ *
+ * The packages/api layer must not import from apps/web. Instead, the
+ * app layer registers a callback when creating the tRPC handler.
+ * This keeps the dependency arrow: apps/web → packages/api (never reverse).
+ *
+ * If no callback is registered (e.g., in tests), revalidation is a no-op.
  */
-async function revalidateEntry(entry: ContentEntryDto) {
-  try {
-    const { revalidateForEntry } = await import("@/lib/cache/revalidate-content");
-    revalidateForEntry(entry);
-  } catch {
-    // revalidation is best-effort; fails silently outside Next.js
-  }
+let onEntryChange: ((entry: ContentEntryDto) => void) | null = null;
+let onEntryDelete: ((siteId: string, typeSlug: string) => void) | null = null;
+
+export function setRevalidationCallbacks(callbacks: {
+  onEntryChange: (entry: ContentEntryDto) => void;
+  onEntryDelete: (siteId: string, typeSlug: string) => void;
+}) {
+  onEntryChange = callbacks.onEntryChange;
+  onEntryDelete = callbacks.onEntryDelete;
 }
 
-async function revalidateDeletion(siteId: string, typeSlug: string) {
-  try {
-    const { revalidateForDeletion } = await import("@/lib/cache/revalidate-content");
-    revalidateForDeletion(siteId, typeSlug);
-  } catch {}
+function revalidateEntry(entry: ContentEntryDto) {
+  onEntryChange?.(entry);
+}
+
+function revalidateDeletion(siteId: string, typeSlug: string) {
+  onEntryDelete?.(siteId, typeSlug);
 }
 
 export const contentRouter = router({

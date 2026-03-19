@@ -114,25 +114,35 @@ export const revisionService = {
       },
     });
 
-    // Restore field values
+    // Restore field values — batch lookup to avoid N+1
     const fieldValues = rev.fieldValues as Record<string, unknown>;
-    for (const [key, value] of Object.entries(fieldValues)) {
-      const fd = await prisma.fieldDefinition.findFirst({
-        where: { key },
+    const fieldKeys = Object.keys(fieldValues);
+
+    if (fieldKeys.length > 0) {
+      // Single query: all field definitions by key
+      const fieldDefs = await prisma.fieldDefinition.findMany({
+        where: { key: { in: fieldKeys } },
+        select: { id: true, key: true },
       });
-      if (fd) {
+      const defMap = new Map(fieldDefs.map((fd) => [fd.key, fd.id]));
+
+      for (const [key, value] of Object.entries(fieldValues)) {
+        const defId = defMap.get(key);
+        if (!defId) continue;
+
+        const jsonValue = value as Parameters<typeof prisma.fieldValue.create>[0]["data"]["value"];
         await prisma.fieldValue.upsert({
           where: {
             contentEntryId_fieldDefinitionId: {
               contentEntryId: rev.contentEntryId,
-              fieldDefinitionId: fd.id,
+              fieldDefinitionId: defId,
             },
           },
-          update: { value: value as any },
+          update: { value: jsonValue },
           create: {
             contentEntryId: rev.contentEntryId,
-            fieldDefinitionId: fd.id,
-            value: value as any,
+            fieldDefinitionId: defId,
+            value: jsonValue,
           },
         });
       }

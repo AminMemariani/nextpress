@@ -199,7 +199,7 @@ export const menuService = {
 
 // ── Helpers ──
 
-/** Resolve URLs for content and taxonomy menu items */
+/** Resolve URLs for content and taxonomy menu items — batched to avoid N+1 */
 async function resolveItemUrls(
   items: Array<{
     id: string;
@@ -213,28 +213,36 @@ async function resolveItemUrls(
     openInNewTab: boolean;
   }>,
 ): Promise<MenuItemDto[]> {
-  const result: MenuItemDto[] = [];
+  // Collect all object IDs by type for batch resolution
+  const contentIds = items.filter((i) => i.type === "content" && i.objectId).map((i) => i.objectId!);
+  const termIds = items.filter((i) => i.type === "taxonomy" && i.objectId).map((i) => i.objectId!);
 
-  for (const item of items) {
+  // Batch queries (2 queries instead of N)
+  const contentMap = new Map<string, string>();
+  if (contentIds.length > 0) {
+    const entries = await prisma.contentEntry.findMany({
+      where: { id: { in: contentIds } },
+      select: { id: true, slug: true },
+    });
+    for (const e of entries) contentMap.set(e.id, `/${e.slug}`);
+  }
+
+  const termMap = new Map<string, string>();
+  if (termIds.length > 0) {
+    const terms = await prisma.term.findMany({
+      where: { id: { in: termIds } },
+      select: { id: true, slug: true, taxonomy: { select: { slug: true } } },
+    });
+    for (const t of terms) termMap.set(t.id, `/${t.taxonomy.slug}/${t.slug}`);
+  }
+
+  return items.map((item) => {
     let resolvedUrl: string | null = null;
+    if (item.type === "custom") resolvedUrl = item.url;
+    else if (item.type === "content" && item.objectId) resolvedUrl = contentMap.get(item.objectId) ?? null;
+    else if (item.type === "taxonomy" && item.objectId) resolvedUrl = termMap.get(item.objectId) ?? null;
 
-    if (item.type === "custom") {
-      resolvedUrl = item.url;
-    } else if (item.type === "content" && item.objectId) {
-      const entry = await prisma.contentEntry.findUnique({
-        where: { id: item.objectId },
-        select: { slug: true },
-      });
-      resolvedUrl = entry ? `/${entry.slug}` : null;
-    } else if (item.type === "taxonomy" && item.objectId) {
-      const term = await prisma.term.findUnique({
-        where: { id: item.objectId },
-        select: { slug: true, taxonomy: { select: { slug: true } } },
-      });
-      resolvedUrl = term ? `/${term.taxonomy.slug}/${term.slug}` : null;
-    }
-
-    result.push({
+    return {
       id: item.id,
       label: item.label,
       url: item.url,
@@ -246,10 +254,8 @@ async function resolveItemUrls(
       openInNewTab: item.openInNewTab,
       resolvedUrl,
       children: [],
-    });
-  }
-
-  return result;
+    };
+  });
 }
 
 /** Build nested tree from flat item list */
