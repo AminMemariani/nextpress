@@ -1,0 +1,12 @@
+{
+  "name": "My Plugin",
+  "slug": "my-plugin",
+  "version": "1.0.0",
+  "description": "A NextPress plugin",
+  "author": "",
+  "dependencies": [],
+  "permissions": [],
+  "settings": {},
+  "contentTypes": [],
+  "taxonomies": []
+}

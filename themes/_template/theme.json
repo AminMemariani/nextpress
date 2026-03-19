@@ -1,0 +1,14 @@
+{
+  "name": "My Custom Theme",
+  "slug": "my-custom-theme",
+  "version": "1.0.0",
+  "description": "A custom NextPress theme",
+  "supports": {
+    "menuLocations": ["primary", "footer"],
+    "customColors": true,
+    "darkMode": false
+  },
+  "settings": {},
+  "templates": ["single", "page", "archive", "home", "404", "index"],
+  "templateChoices": []
+}

@@ -1,0 +1,39 @@
+{
+  "name": "Default",
+  "slug": "default",
+  "version": "1.0.0",
+  "description": "Clean, minimal default theme for NextPress",
+  "author": "NextPress Team",
+  "screenshot": "screenshot.png",
+  "supports": {
+    "menuLocations": ["primary", "footer"],
+    "widgetAreas": ["sidebar"],
+    "customColors": true,
+    "darkMode": false
+  },
+  "settings": {
+    "type": "object",
+    "properties": {
+      "accentColor": { "type": "string", "default": "#2563eb" },
+      "fontFamily": { "type": "string", "enum": ["system", "serif", "mono"], "default": "system" },
+      "showSidebar": { "type": "boolean", "default": false },
+      "postsPerPage": { "type": "number", "default": 10 },
+      "footerText": { "type": "string", "default": "Powered by NextPress" }
+    }
+  },
+  "templates": ["single", "page", "archive", "home", "search", "404", "index"],
+  "templateChoices": [
+    {
+      "slug": "full-width",
+      "name": "Full Width",
+      "description": "No sidebar, content spans the full width",
+      "contentTypes": ["post", "page"]
+    },
+    {
+      "slug": "sidebar-right",
+      "name": "Sidebar Right",
+      "description": "Content with a right sidebar",
+      "contentTypes": ["post"]
+    }
+  ]
+}

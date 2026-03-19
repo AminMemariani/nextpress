@@ -6,6 +6,8 @@ import {
   publicProcedure,
 } from "../trpc";
 import { contentService } from "@nextpress/core/content/content-service";
+import { reviewWorkflow } from "@nextpress/core/content/review-workflow";
+import { prisma } from "@nextpress/db";
 import {
   createContentEntrySchema,
   updateContentEntrySchema,
@@ -56,7 +58,7 @@ export const contentRouter = router({
       return contentService.create(ctx.auth, input);
     }),
 
-  /** Update an existing content entry */
+  /** Update an existing content entry (creates revision) */
   update: authedProcedure
     .input(
       z.object({
@@ -68,7 +70,45 @@ export const contentRouter = router({
       return contentService.update(ctx.auth, input.id, input.data);
     }),
 
-  /** Save as draft (convenience) */
+  /**
+   * Autosave — lightweight save that does NOT create a revision.
+   *
+   * The problem: if autosave fires every 30 seconds and each save
+   * creates a revision, you get 120 revisions per hour of editing.
+   * That's noise, not history.
+   *
+   * Solution: autosave writes directly to the content entry (title,
+   * blocks) without calling revisionService.create(). A real revision
+   * is only created on explicit "Save Draft", "Publish", or "Update".
+   */
+  autosave: authedProcedure
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        title: z.string().optional(),
+        blocks: z.array(z.any()).optional(),
+        excerpt: z.string().optional().nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const entry = await prisma.contentEntry.findFirst({
+        where: { id: input.id, siteId: ctx.auth.siteId },
+      });
+      if (!entry) return { success: false };
+
+      await prisma.contentEntry.update({
+        where: { id: input.id },
+        data: {
+          ...(input.title !== undefined && { title: input.title }),
+          ...(input.blocks !== undefined && { blocks: input.blocks }),
+          ...(input.excerpt !== undefined && { excerpt: input.excerpt }),
+        },
+      });
+
+      return { success: true, savedAt: new Date() };
+    }),
+
+  /** Save as draft (convenience — DOES create revision) */
   saveDraft: authedProcedure
     .input(
       z.object({
@@ -141,5 +181,50 @@ export const contentRouter = router({
     .mutation(async ({ ctx, input }) => {
       await contentService.delete(ctx.auth, input.id);
       return { success: true };
+    }),
+
+  // ── Review workflow ──
+
+  /** Submit for review (DRAFT → PENDING_REVIEW) */
+  submitForReview: authedProcedure
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        note: z.string().max(1000).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return reviewWorkflow.submitForReview(ctx.auth, input.id, input.note);
+    }),
+
+  /** Approve review (PENDING_REVIEW → PUBLISHED) */
+  approveReview: authedProcedure
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        note: z.string().max(1000).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return reviewWorkflow.approve(ctx.auth, input.id, input.note);
+    }),
+
+  /** Request changes (PENDING_REVIEW → DRAFT + note) */
+  requestChanges: authedProcedure
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        note: z.string().min(1).max(1000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return reviewWorkflow.requestChanges(ctx.auth, input.id, input.note);
+    }),
+
+  /** Get review status for an entry */
+  reviewStatus: authedProcedure
+    .input(z.object({ id: z.string().cuid() }))
+    .query(async ({ ctx, input }) => {
+      return reviewWorkflow.getReviewStatus(ctx.auth.siteId, input.id);
     }),
 });

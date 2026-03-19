@@ -114,6 +114,7 @@ model Site {
   plugins         PluginInstall[]
   themes          ThemeInstall[]
   blockTemplates  BlockTemplate[]
+  redirects       Redirect[]
 
   @@map("sites")
 }
@@ -851,4 +852,34 @@ model BlockTemplate {
 enum BlockTemplateMode {
   REUSABLE  // shared by reference, editing updates all usages
   PATTERN   // copied on insertion, no ongoing link
+}
+
+// ============================================================================
+// 16. REDIRECTS
+// ============================================================================
+// URL redirect rules for SEO. Supports:
+//   - Old slug → new slug (auto-created when slug changes)
+//   - Manual redirects entered in admin
+//   - Regex patterns for bulk redirects
+//
+// Checked in middleware before route resolution.
+// ============================================================================
+
+model Redirect {
+  id         String @id @default(cuid())
+  siteId     String
+  site       Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  fromPath   String                    // "/old-post" or regex "^/blog/(.*)$"
+  toPath     String                    // "/new-post" or "/articles/$1"
+  statusCode Int    @default(301)      // 301 (permanent) or 302 (temporary)
+  isRegex    Boolean @default(false)
+  isActive   Boolean @default(true)
+  hitCount   Int     @default(0)       // how many times this redirect fired
+
+  createdAt  DateTime @default(now())
+
+  @@unique([siteId, fromPath])
+  @@index([siteId, isActive])
+  @@map("redirects")
 }

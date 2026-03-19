@@ -1,0 +1,26 @@
+{
+  "name": "Contact Form",
+  "slug": "contact-form",
+  "version": "1.0.0",
+  "description": "Adds a contact form block and submission management",
+  "author": "NextPress Team",
+  "dependencies": [],
+  "permissions": [
+    {
+      "slug": "manage_form_submissions",
+      "name": "Manage Form Submissions",
+      "description": "View and manage contact form submissions",
+      "group": "plugin"
+    }
+  ],
+  "settings": {
+    "type": "object",
+    "properties": {
+      "recipientEmail": { "type": "string", "default": "" },
+      "successMessage": { "type": "string", "default": "Thank you! Your message has been sent." },
+      "enableNotifications": { "type": "boolean", "default": true }
+    }
+  },
+  "contentTypes": ["form_submission"],
+  "taxonomies": []
+}

@@ -1,0 +1,13 @@
+/* NextPress Default Theme */
+.np-theme-default {
+  --accent: #2563eb;
+  color: #1a1a1a;
+  line-height: 1.7;
+}
+.np-theme-default .prose { max-width: 65ch; }
+.np-theme-default .prose p { margin: 1.25em 0; }
+.np-theme-default .prose h2 { margin: 2em 0 0.5em; font-size: 1.5em; font-weight: 700; }
+.np-theme-default .prose h3 { margin: 1.5em 0 0.5em; font-size: 1.25em; font-weight: 600; }
+.np-theme-default .prose a { color: var(--accent); text-decoration: underline; }
+.np-theme-default .prose blockquote { border-left: 3px solid var(--accent); padding-left: 1em; color: #555; font-style: italic; }
+.np-theme-default .prose img { border-radius: 0.5rem; }

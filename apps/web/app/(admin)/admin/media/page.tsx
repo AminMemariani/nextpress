@@ -1,13 +1,19 @@
 import { requirePermission } from "@/lib/auth/guards";
-import { PageHeader, Button } from "@nextpress/ui";
+import { getServerCaller } from "@/lib/trpc/server";
+import { PageHeader } from "@nextpress/ui";
+import { MediaUploader } from "@/components/admin/media/media-uploader";
+import { MediaGrid } from "@/components/admin/media/media-grid";
 
 export default async function MediaPage() {
   await requirePermission("upload_media");
+  const caller = await getServerCaller();
+  const initialData = await caller.media.list({ page: 1, perPage: 24 });
 
   return (
-    <div>
-      <PageHeader title="Media Library" actions={<Button>Upload</Button>} />
-      <p className="text-gray-500">Media grid with filters, search, and bulk select. Upload via drag-drop or file picker.</p>
+    <div className="space-y-6">
+      <PageHeader title="Media Library" />
+      <MediaUploader />
+      <MediaGrid initialData={initialData} />
     </div>
   );
 }

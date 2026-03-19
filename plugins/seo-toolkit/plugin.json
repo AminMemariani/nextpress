@@ -1,0 +1,29 @@
+{
+  "name": "SEO Toolkit",
+  "slug": "seo-toolkit",
+  "version": "1.0.0",
+  "description": "Adds SEO meta tags, sitemaps, and structured data to your content",
+  "author": "NextPress Team",
+  "requires": ">=1.0.0",
+  "dependencies": [],
+  "permissions": [
+    {
+      "slug": "manage_seo",
+      "name": "Manage SEO",
+      "description": "Configure SEO settings and meta tags",
+      "group": "seo"
+    }
+  ],
+  "settings": {
+    "type": "object",
+    "properties": {
+      "titleSeparator": { "type": "string", "default": "|" },
+      "defaultDescription": { "type": "string", "default": "" },
+      "enableSitemap": { "type": "boolean", "default": true },
+      "enableStructuredData": { "type": "boolean", "default": true },
+      "socialImage": { "type": "string", "default": "" }
+    }
+  },
+  "contentTypes": [],
+  "taxonomies": []
+}
