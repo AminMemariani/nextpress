@@ -5,7 +5,9 @@ import { paginationSchema, sortOrderSchema } from "../validation/schemas";
 
 export const ALLOWED_MIME_TYPES = [
   // Images
-  "image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/svg+xml",
+  // SECURITY: SVG excluded — can contain JavaScript (XSS vector).
+  // SVGs should be served through a sanitization proxy if needed.
+  "image/jpeg", "image/png", "image/gif", "image/webp", "image/avif",
   // Documents
   "application/pdf",
   "application/msword",

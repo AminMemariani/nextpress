@@ -112,15 +112,32 @@ export function parseSort(url: URL, allowed: string[], defaultSort = "createdAt"
 
 // ── CORS ──
 
-function corsHeaders(): Record<string, string> {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Site-ID",
+/**
+ * SECURITY: CORS is restricted to configured origins only.
+ * Set ALLOWED_ORIGINS env var as comma-separated list:
+ *   ALLOWED_ORIGINS=https://example.com,https://admin.example.com
+ * If unset, only same-origin requests are allowed (no CORS headers).
+ */
+function corsHeaders(requestOrigin?: string | null): Record<string, string> {
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",").map((o) => o.trim()) ?? [];
+  const headers: Record<string, string> = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
   };
+
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    headers["Access-Control-Allow-Origin"] = requestOrigin;
+    headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+    headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Site-ID";
+    headers["Access-Control-Max-Age"] = "86400";
+  }
+
+  return headers;
 }
 
 /** OPTIONS handler for CORS preflight */
-export function handleOptions() {
-  return new NextResponse(null, { status: 204, headers: corsHeaders() });
+export function handleOptions(req?: Request) {
+  const origin = req?.headers.get("origin") ?? null;
+  return new NextResponse(null, { status: 204, headers: corsHeaders(origin) });
 }

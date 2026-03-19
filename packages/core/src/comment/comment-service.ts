@@ -85,10 +85,12 @@ export const commentService = {
       }
     }
 
-    // Sanitize body (strip all HTML except basic formatting)
+    // SECURITY: Sanitize body. Block javascript: and data: URLs in links.
     const sanitizedBody = DOMPurify.sanitize(data.body, {
       ALLOWED_TAGS: ["p", "br", "strong", "em", "a", "code"],
       ALLOWED_ATTR: ["href"],
+      ALLOW_DATA_ATTR: false,
+      ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
     });
 
     if (!sanitizedBody.trim()) {
@@ -188,9 +190,9 @@ export const commentService = {
     });
     if (!existing) throw new NotFoundError("Comment", commentId);
 
-    // Delete replies first (not cascade — we want explicit control)
+    // SECURITY: scope reply deletion to same site to prevent cross-tenant cascade
     await prisma.comment.deleteMany({
-      where: { parentId: commentId },
+      where: { parentId: commentId, siteId: auth.siteId },
     });
     await prisma.comment.delete({ where: { id: commentId } });
   },

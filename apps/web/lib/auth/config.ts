@@ -68,10 +68,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           },
         });
 
-        if (!user?.passwordHash) return null;
-
-        const isValid = await compare(password, user.passwordHash);
-        if (!isValid) return null;
+        // SECURITY: Always run bcrypt compare to prevent timing-based
+        // email enumeration. If user doesn't exist, compare against a
+        // dummy hash so the response time is consistent.
+        const hashToCompare =
+          user?.passwordHash ??
+          "$2b$12$0000000000000000000000000000000000000000000000000000";
+        const isValid = await compare(password, hashToCompare);
+        if (!user || !isValid) return null;
 
         // Return the slim user object (becomes the JWT payload)
         return {
