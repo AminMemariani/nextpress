@@ -1,12 +1,60 @@
-# NextPress Technical Specification
+<div align="center">
 
-**A WordPress-like CMS built with Next.js, TypeScript, PostgreSQL, and Prisma.**
+# NextPress
 
-NextPress replicates the flexibility of WordPress (custom content types, plugins, themes, blocks) on a modern stack with type safety, server-side rendering, and an API-first architecture.
+**The modern, open-source CMS for the Next.js ecosystem.**
 
-Current state: 244 TypeScript files, 18,752 lines of code, 28 Prisma models, 11 tRPC routers, 11 service modules, 13 test files.
+[![CI](https://github.com/nextpress/nextpress/actions/workflows/ci.yml/badge.svg)](https://github.com/nextpress/nextpress/actions/workflows/ci.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-14+-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+[![Coverage](https://img.shields.io/badge/Coverage-Unit%20%7C%20Integration%20%7C%20E2E-blue)]()
+[![Code Style](https://img.shields.io/badge/Code_Style-Prettier-ff69b4?logo=prettier&logoColor=white)](https://prettier.io/)
+
+WordPress taught the world that anyone can publish on the web. NextPress carries that mission forward with a modern foundation: **type-safe TypeScript**, **server-rendered React**, **structured block content**, and an **API-first architecture** that works for both traditional websites and headless frontends.
+
+</div>
 
 ---
+
+### What is NextPress?
+
+NextPress is a content management system that gives you the flexibility of WordPress — custom content types, a plugin ecosystem, swappable themes, a block-based editor, media management, editorial workflows, SEO, comments, menus, and multi-site — built entirely on Next.js, TypeScript, PostgreSQL, and Prisma.
+
+It is designed for developers who want to build content-driven websites and applications without sacrificing type safety, performance, or the ability to extend every part of the system.
+
+### Why not just use WordPress?
+
+WordPress is PHP, relies on a 20-year-old architecture, has no type safety, mixes rendering with data access, and doesn't support modern deployment targets (serverless, edge, containers) without significant friction. NextPress solves these problems while preserving what WordPress got right: the content model, the plugin/theme ecosystem pattern, and the editorial experience.
+
+### Why not a headless CMS (Sanity, Strapi, Contentful)?
+
+Headless CMSs separate the backend from the frontend, which adds latency, deployment complexity, and a disconnect between content editing and content rendering. NextPress keeps them in one repository — the admin panel and the public site share the same process, the same types, and the same cache. Publish a post and the public page updates in under a second, not after a webhook round-trip.
+
+### Project Status
+
+NextPress is in **active development**. The architecture is complete and the core systems are implemented:
+
+| Metric | Value |
+|--------|-------|
+| TypeScript files | 244 |
+| Lines of code | 18,752 |
+| Prisma models | 28 |
+| tRPC routers | 11 |
+| Service modules | 11 |
+| Block types | 6 |
+| Test files | 13 |
+| Permissions | 28 |
+| Hook events | 16 |
+
+The next step is wiring the monorepo dependencies (`pnpm install`), running the first migration, and booting the dev server. See [Getting Started](#23-getting-started).
+
+---
+
+# Technical Specification
 
 ## Table of Contents
 
