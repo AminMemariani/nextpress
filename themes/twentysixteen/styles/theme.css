@@ -1,0 +1,351 @@
+/* ============================================================
+   Twenty Twentysix — NextPress Default Theme 2026
+   ============================================================ */
+
+:root {
+  --np-accent: #2563eb;
+  --np-accent-hover: #1d4ed8;
+  --np-text: #1a1a2e;
+  --np-text-secondary: #64748b;
+  --np-bg: #ffffff;
+  --np-bg-secondary: #f8fafc;
+  --np-border: #e2e8f0;
+  --np-radius: 0.5rem;
+  --np-max-width: 1200px;
+  --np-content-width: 720px;
+  --np-sidebar-width: 320px;
+  --np-font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --np-font-serif: "Georgia", "Times New Roman", serif;
+  --np-font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Dark mode */
+.np-dark {
+  --np-text: #e2e8f0;
+  --np-text-secondary: #94a3b8;
+  --np-bg: #0f172a;
+  --np-bg-secondary: #1e293b;
+  --np-border: #334155;
+}
+
+/* ── Base ── */
+.np-2026 {
+  font-family: var(--np-font-sans);
+  color: var(--np-text);
+  background: var(--np-bg);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+.np-2026.np-font-georgia { font-family: var(--np-font-serif); }
+.np-2026.np-font-merriweather { font-family: "Merriweather", var(--np-font-serif); }
+.np-2026.np-font-inter { font-family: var(--np-font-sans); }
+
+/* ── Container ── */
+.np-container {
+  max-width: var(--np-max-width);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ── Header ── */
+.np-header {
+  border-bottom: 1px solid var(--np-border);
+  background: var(--np-bg);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--np-bg) 85%, transparent);
+}
+.np-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 4rem;
+}
+.np-site-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--np-text);
+  text-decoration: none;
+}
+.np-nav a {
+  color: var(--np-text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--np-radius);
+  transition: color 0.15s, background 0.15s;
+}
+.np-nav a:hover {
+  color: var(--np-text);
+  background: var(--np-bg-secondary);
+}
+
+/* ── Content layout ── */
+.np-content-area {
+  display: grid;
+  gap: 3rem;
+  padding: 2.5rem 0;
+}
+.np-content-area.np-has-sidebar {
+  grid-template-columns: 1fr var(--np-sidebar-width);
+}
+.np-content-area.np-sidebar-left {
+  grid-template-columns: var(--np-sidebar-width) 1fr;
+}
+.np-content-area.np-full-width {
+  grid-template-columns: 1fr;
+  max-width: var(--np-content-width);
+  margin: 0 auto;
+}
+@media (max-width: 1024px) {
+  .np-content-area.np-has-sidebar,
+  .np-content-area.np-sidebar-left {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Article card (archive/home) ── */
+.np-post-card {
+  padding-bottom: 2rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--np-border);
+}
+.np-post-card:last-child { border-bottom: none; }
+.np-post-card-image {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: var(--np-radius);
+  margin-bottom: 1rem;
+}
+.np-post-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 0.5rem;
+}
+.np-post-card-title a {
+  color: var(--np-text);
+  text-decoration: none;
+}
+.np-post-card-title a:hover { color: var(--np-accent); }
+.np-post-card-meta {
+  font-size: 0.8125rem;
+  color: var(--np-text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.np-post-card-excerpt {
+  color: var(--np-text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+.np-read-more {
+  color: var(--np-accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.np-read-more:hover { text-decoration: underline; }
+
+/* ── Single post ── */
+.np-single-header { margin-bottom: 2rem; }
+.np-single-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  margin-bottom: 1rem;
+}
+.np-single-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: var(--np-text-secondary);
+}
+.np-author-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.np-reading-time {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.np-featured-image {
+  width: 100%;
+  border-radius: var(--np-radius);
+  margin-bottom: 2rem;
+}
+.np-cover-header {
+  position: relative;
+  width: 100%;
+  min-height: 60vh;
+  display: flex;
+  align-items: flex-end;
+  padding: 3rem;
+  background-size: cover;
+  background-position: center;
+  border-radius: var(--np-radius);
+  margin-bottom: 2rem;
+}
+.np-cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 30%, rgba(0,0,0,0.7));
+  border-radius: var(--np-radius);
+}
+.np-cover-content { position: relative; color: white; }
+.np-cover-content .np-single-title { color: white; }
+.np-cover-content .np-single-meta { color: rgba(255,255,255,0.8); }
+
+/* ── Prose (block content) ── */
+.np-prose { max-width: var(--np-content-width); }
+.np-prose p { margin: 1.25em 0; }
+.np-prose h2 { font-size: 1.75rem; font-weight: 700; margin: 2.5em 0 0.5em; letter-spacing: -0.015em; }
+.np-prose h3 { font-size: 1.375rem; font-weight: 600; margin: 2em 0 0.5em; }
+.np-prose h4 { font-size: 1.125rem; font-weight: 600; margin: 1.5em 0 0.5em; }
+.np-prose a { color: var(--np-accent); text-decoration: underline; text-underline-offset: 2px; }
+.np-prose a:hover { color: var(--np-accent-hover); }
+.np-prose blockquote {
+  border-left: 3px solid var(--np-accent);
+  padding: 0 0 0 1.25rem;
+  margin: 1.5em 0;
+  font-style: italic;
+  color: var(--np-text-secondary);
+}
+.np-prose img { border-radius: var(--np-radius); max-width: 100%; height: auto; }
+.np-prose pre {
+  background: var(--np-bg-secondary);
+  border: 1px solid var(--np-border);
+  border-radius: var(--np-radius);
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-family: var(--np-font-mono);
+  font-size: 0.875rem;
+}
+.np-prose code:not(pre code) {
+  background: var(--np-bg-secondary);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: var(--np-font-mono);
+  font-size: 0.875em;
+}
+.np-prose ul, .np-prose ol { padding-left: 1.5rem; margin: 1em 0; }
+.np-prose li { margin: 0.25em 0; }
+.np-prose hr { border: none; border-top: 1px solid var(--np-border); margin: 2rem 0; }
+.np-prose figure { margin: 2rem 0; }
+.np-prose figcaption { font-size: 0.8125rem; color: var(--np-text-secondary); text-align: center; margin-top: 0.5rem; }
+
+/* ── Author bio ── */
+.np-author-bio {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--np-bg-secondary);
+  border-radius: var(--np-radius);
+  margin: 2.5rem 0;
+}
+.np-author-bio-avatar { width: 4rem; height: 4rem; border-radius: 50%; flex-shrink: 0; }
+.np-author-bio-name { font-weight: 600; margin-bottom: 0.25rem; }
+.np-author-bio-desc { font-size: 0.875rem; color: var(--np-text-secondary); }
+
+/* ── Share buttons ── */
+.np-share { display: flex; gap: 0.5rem; margin: 1.5rem 0; }
+.np-share a {
+  display: flex; align-items: center; justify-content: center;
+  width: 2.25rem; height: 2.25rem;
+  border-radius: 50%; background: var(--np-bg-secondary);
+  color: var(--np-text-secondary); text-decoration: none;
+  font-size: 0.875rem; transition: background 0.15s, color 0.15s;
+}
+.np-share a:hover { background: var(--np-accent); color: white; }
+
+/* ── Tags ── */
+.np-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0; }
+.np-tag {
+  font-size: 0.75rem; font-weight: 500;
+  background: var(--np-bg-secondary); color: var(--np-text-secondary);
+  padding: 0.25rem 0.75rem; border-radius: 9999px;
+  text-decoration: none; transition: background 0.15s, color 0.15s;
+}
+.np-tag:hover { background: var(--np-accent); color: white; }
+
+/* ── Sidebar ── */
+.np-sidebar { font-size: 0.9375rem; }
+.np-widget { margin-bottom: 2rem; }
+.np-widget-title {
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--np-text-secondary);
+  margin-bottom: 1rem; padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--np-border);
+}
+
+/* ── Pagination ── */
+.np-pagination {
+  display: flex; justify-content: center; gap: 0.25rem;
+  margin: 2.5rem 0; padding-top: 2rem;
+  border-top: 1px solid var(--np-border);
+}
+.np-pagination a, .np-pagination span {
+  padding: 0.5rem 0.875rem; border-radius: var(--np-radius);
+  font-size: 0.875rem; font-weight: 500; text-decoration: none;
+}
+.np-pagination a { color: var(--np-text-secondary); background: var(--np-bg-secondary); }
+.np-pagination a:hover { background: var(--np-accent); color: white; }
+.np-pagination .np-current { background: var(--np-accent); color: white; }
+
+/* ── Footer ── */
+.np-footer {
+  border-top: 1px solid var(--np-border);
+  padding: 3rem 0;
+  margin-top: 2rem;
+  background: var(--np-bg-secondary);
+}
+.np-footer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+@media (max-width: 768px) {
+  .np-footer-grid { grid-template-columns: 1fr; }
+}
+.np-footer-bottom {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--np-border);
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--np-text-secondary);
+}
+
+/* ── 404 ── */
+.np-404 { text-align: center; padding: 6rem 0; }
+.np-404-code { font-size: 8rem; font-weight: 800; color: var(--np-border); line-height: 1; }
+.np-404-title { font-size: 1.5rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+.np-404-desc { color: var(--np-text-secondary); margin-bottom: 2rem; }
+.np-404-link {
+  display: inline-block; padding: 0.75rem 1.5rem;
+  background: var(--np-accent); color: white; border-radius: var(--np-radius);
+  text-decoration: none; font-weight: 600; transition: background 0.15s;
+}
+.np-404-link:hover { background: var(--np-accent-hover); }
+
+/* ── Search form ── */
+.np-search-form { position: relative; margin-bottom: 2rem; }
+.np-search-input {
+  width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 1px solid var(--np-border); border-radius: var(--np-radius);
+  font-size: 1rem; background: var(--np-bg);
+  color: var(--np-text); outline: none;
+}
+.np-search-input:focus { border-color: var(--np-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--np-accent) 20%, transparent); }

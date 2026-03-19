@@ -226,6 +226,8 @@ importers:
 
   themes/default: {}
 
+  themes/twentysixteen: {}
+
   tooling/eslint-config: {}
 
   tooling/prettier-config: {}

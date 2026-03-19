@@ -1,0 +1,76 @@
+{
+  "name": "Twenty Twentysix",
+  "slug": "twentysixteen",
+  "version": "1.0.0",
+  "description": "The default NextPress theme for 2026. A clean, responsive blog theme with magazine-style homepage, featured images, sidebar widgets, dark mode, and full block editor support.",
+  "author": "NextPress Team",
+  "screenshot": "assets/screenshot.png",
+  "supports": {
+    "menuLocations": ["primary", "footer", "social"],
+    "widgetAreas": ["sidebar", "footer-1", "footer-2", "footer-3"],
+    "customColors": true,
+    "darkMode": true
+  },
+  "settings": {
+    "type": "object",
+    "properties": {
+      "accentColor": { "type": "string", "default": "#2563eb" },
+      "fontFamily": {
+        "type": "string",
+        "enum": ["system", "inter", "georgia", "merriweather"],
+        "default": "system"
+      },
+      "layout": {
+        "type": "string",
+        "enum": ["blog", "magazine", "minimal"],
+        "default": "blog"
+      },
+      "showSidebar": { "type": "boolean", "default": true },
+      "sidebarPosition": {
+        "type": "string",
+        "enum": ["right", "left"],
+        "default": "right"
+      },
+      "postsPerPage": { "type": "number", "default": 10 },
+      "showExcerpts": { "type": "boolean", "default": true },
+      "excerptLength": { "type": "number", "default": 55 },
+      "showAuthorBio": { "type": "boolean", "default": true },
+      "showRelatedPosts": { "type": "boolean", "default": true },
+      "showReadingTime": { "type": "boolean", "default": true },
+      "showShareButtons": { "type": "boolean", "default": true },
+      "footerText": { "type": "string", "default": "Powered by NextPress" },
+      "darkMode": { "type": "boolean", "default": false }
+    }
+  },
+  "templates": [
+    "index", "single", "single-post", "page",
+    "archive", "archive-post", "home", "front-page",
+    "search", "404", "taxonomy", "taxonomy-category", "taxonomy-tag"
+  ],
+  "templateChoices": [
+    {
+      "slug": "full-width",
+      "name": "Full Width",
+      "description": "No sidebar, content spans the full width",
+      "contentTypes": ["post", "page"]
+    },
+    {
+      "slug": "sidebar-left",
+      "name": "Left Sidebar",
+      "description": "Content with sidebar on the left",
+      "contentTypes": ["post", "page"]
+    },
+    {
+      "slug": "no-title",
+      "name": "No Title",
+      "description": "Page without a visible title — for landing pages",
+      "contentTypes": ["page"]
+    },
+    {
+      "slug": "cover",
+      "name": "Cover",
+      "description": "Full-width featured image with overlaid title",
+      "contentTypes": ["post", "page"]
+    }
+  ]
+}
