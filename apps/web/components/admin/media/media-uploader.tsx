@@ -21,7 +21,7 @@ export function MediaUploader({ onUploadComplete }: Props) {
     const fileArray = Array.from(files);
 
     for (let i = 0; i < fileArray.length; i++) {
-      const file = fileArray[i];
+      const file = fileArray[i]!;
       setProgress(`Uploading ${i + 1}/${fileArray.length}: ${file.name}`);
 
       const formData = new FormData();

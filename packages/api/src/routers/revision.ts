@@ -58,7 +58,7 @@ export const revisionRouter = router({
         };
       }
 
-      const older = allRevisions[currentIdx + 1]; // list is newest-first
+      const older = allRevisions[currentIdx + 1]!; // list is newest-first
       return compareRevisions(older, revision);
     }),
 

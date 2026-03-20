@@ -109,7 +109,8 @@ export const themeManager = {
         const templateSlug = file.replace(".tsx", "");
         try {
           const mod = await import(join(templatesDir, file));
-          const component = mod.default || mod[Object.keys(mod)[0]];
+          const firstKey = Object.keys(mod)[0] as string | undefined;
+          const component = mod.default || (firstKey && mod[firstKey]);
           if (component) {
             templates.set(templateSlug, component);
           }
@@ -143,7 +144,8 @@ export const themeManager = {
         const blockType = `core/${blockSlug}`;
         try {
           const mod = await import(join(blocksDir, file));
-          const component = mod.default || mod[Object.keys(mod)[0]];
+          const blockFirstKey = Object.keys(mod)[0] as string | undefined;
+          const component = mod.default || (blockFirstKey && mod[blockFirstKey]);
           if (component) {
             blockOverrides.set(blockType, component);
             // Register the override in the block registry

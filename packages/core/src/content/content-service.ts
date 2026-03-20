@@ -29,6 +29,7 @@ import {
   AuthorizationError,
 } from "../errors/cms-error";
 import { slugify, uniqueSlug } from "../validation/slug";
+import { toJsonInput } from "../prisma-helpers";
 import { paginate, type PaginatedResult } from "../validation/schemas";
 import { validateFields } from "../fields/field-validator";
 import { revisionService } from "../revision/revision-service";
@@ -123,7 +124,7 @@ export const contentService = {
           title: data.title,
           slug,
           excerpt: data.excerpt ?? null,
-          blocks: data.blocks,
+          blocks: toJsonInput(data.blocks),
           status: data.status,
           password: data.password ?? null,
           parentId: data.parentId ?? null,
@@ -261,10 +262,10 @@ export const contentService = {
           ...(data.title !== undefined && { title: data.title }),
           ...(newSlug !== undefined && { slug: newSlug }),
           ...(data.excerpt !== undefined && { excerpt: data.excerpt }),
-          ...(data.blocks !== undefined && { blocks: data.blocks }),
+          ...(data.blocks !== undefined && { blocks: toJsonInput(data.blocks) }),
           ...(data.status !== undefined && { status: data.status }),
-          ...(data.password !== undefined && { password: data.password }),
-          ...(data.parentId !== undefined && { parentId: data.parentId }),
+          ...(data.password !== undefined && { password: data.password ?? null }),
+          ...(data.parentId !== undefined && { parentId: data.parentId ?? null }),
           ...(data.template !== undefined && { template: data.template }),
           ...(data.menuOrder !== undefined && { menuOrder: data.menuOrder }),
           ...(data.scheduledAt !== undefined && { scheduledAt: data.scheduledAt }),
@@ -609,7 +610,7 @@ function toFullDto(entry: FullEntryResult): ContentEntryDto {
     title: entry.title,
     slug: entry.slug,
     excerpt: entry.excerpt,
-    blocks: entry.blocks as ContentEntryDto["blocks"],
+    blocks: entry.blocks as unknown as ContentEntryDto["blocks"],
     password: entry.password,
     author: entry.author,
     parentId: entry.parentId,

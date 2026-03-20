@@ -174,7 +174,7 @@ export function getTemplateChoicesForType(
   }>,
   contentTypeSlug: string,
 ): Array<{ slug: string; name: string; description?: string }> {
-  const choices = [
+  const choices: Array<{ slug: string; name: string; description?: string }> = [
     { slug: "", name: "Default Template", description: "Uses the theme's default template for this content type" },
   ];
 

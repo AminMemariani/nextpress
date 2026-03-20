@@ -10,6 +10,7 @@ import { prisma } from "@nextpress/db";
 import type { AuthContext } from "../auth/auth-types";
 import { assertCan } from "../auth/permissions";
 import { NotFoundError, ValidationError } from "../errors/cms-error";
+import { toNullableJsonInput, toJsonInput } from "../prisma-helpers";
 import {
   createFieldDefinitionSchema,
   updateFieldDefinitionSchema,
@@ -92,9 +93,9 @@ export const fieldService = {
         ...(data.description !== undefined && { description: data.description }),
         ...(data.fieldType !== undefined && { fieldType: data.fieldType }),
         ...(data.isRequired !== undefined && { isRequired: data.isRequired }),
-        ...(data.defaultValue !== undefined && { defaultValue: data.defaultValue }),
-        ...(data.validation !== undefined && { validation: data.validation }),
-        ...(data.options !== undefined && { options: data.options }),
+        ...(data.defaultValue !== undefined && { defaultValue: toNullableJsonInput(data.defaultValue) }),
+        ...(data.validation !== undefined && { validation: toJsonInput(data.validation) }),
+        ...(data.options !== undefined && { options: toNullableJsonInput(data.options) }),
         ...(data.group !== undefined && { group: data.group }),
         ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
       },

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { router, authedProcedure, permissionProcedure } from "../trpc";
 import { prisma } from "@nextpress/db";
 import { blockDataSchema } from "@nextpress/core/validation/schemas";
@@ -28,7 +29,7 @@ export const blockTemplateRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       return prisma.blockTemplate.create({
-        data: { siteId: ctx.auth.siteId, ...input },
+        data: { siteId: ctx.auth.siteId, ...input, blocks: input.blocks as unknown as Prisma.InputJsonValue },
       });
     }),
   update: authedProcedure
@@ -40,8 +41,14 @@ export const blockTemplateRouter = router({
       category: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      return prisma.blockTemplate.update({ where: { id }, data });
+      const { id, blocks, ...rest } = input;
+      return prisma.blockTemplate.update({
+        where: { id },
+        data: {
+          ...rest,
+          ...(blocks !== undefined && { blocks: blocks as unknown as Prisma.InputJsonValue }),
+        },
+      });
     }),
   delete: authedProcedure
     .input(z.object({ id: z.string().cuid() }))

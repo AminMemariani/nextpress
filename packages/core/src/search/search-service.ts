@@ -131,7 +131,7 @@ export const searchService = {
       title: entry.title,
       slug: entry.slug,
       excerpt: entry.excerpt,
-      bodyText: this.extractTextFromBlocks(entry.blocks as BlockData[]),
+      bodyText: this.extractTextFromBlocks(entry.blocks as unknown as BlockData[]),
       contentTypeSlug: entry.contentType.slug,
       status: entry.status,
       authorName: entry.author.displayName ?? entry.author.name ?? "",

@@ -9,6 +9,7 @@ import {
   dateRangeSchema,
 } from "../validation/schemas";
 import type { BlockData, ContentStatusInput } from "../validation/schemas";
+export type { ContentStatusInput } from "../validation/schemas";
 
 // ── Create ──
 

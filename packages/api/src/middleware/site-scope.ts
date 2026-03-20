@@ -1,5 +1,4 @@
 import { TRPCError } from "@trpc/server";
-import { initTRPC } from "@trpc/server";
 import type { AuthedTrpcContext } from "../context";
 
 /**
@@ -10,7 +9,7 @@ import type { AuthedTrpcContext } from "../context";
  * the Prisma site-scoped extension.
  */
 export function createSiteScopeMiddleware(
-  t: ReturnType<typeof initTRPC.context<AuthedTrpcContext>["create"]>,
+  t: { middleware: (fn: (opts: { ctx: AuthedTrpcContext; next: (opts: { ctx: AuthedTrpcContext & { siteId: string } }) => Promise<unknown> }) => Promise<unknown>) => unknown },
 ) {
   return t.middleware(({ ctx, next }) => {
     if (!ctx.auth.siteId) {

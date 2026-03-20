@@ -20,7 +20,7 @@ export function MenuItemTree({ items, onUpdate, depth = 0 }: Props) {
     const newItems = [...items];
     const target = direction === "up" ? index - 1 : index + 1;
     if (target < 0 || target >= newItems.length) return;
-    [newItems[index], newItems[target]] = [newItems[target], newItems[index]];
+    [newItems[index], newItems[target]] = [newItems[target]!, newItems[index]!];
     onUpdate(newItems);
   }
 
@@ -40,8 +40,8 @@ export function MenuItemTree({ items, onUpdate, depth = 0 }: Props) {
 
   function indentItem(index: number) {
     if (index === 0) return;
-    const item = items[index];
-    const prevItem = items[index - 1];
+    const item = items[index]!;
+    const prevItem = items[index - 1]!;
     const newItems = items.filter((_, i) => i !== index);
     newItems[index - 1] = {
       ...prevItem,

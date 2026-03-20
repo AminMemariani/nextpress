@@ -156,7 +156,7 @@ export function MenuBuilder({ locations, initialMenus }: Props) {
 function flattenTree(items: MenuItemDto[], parentId?: string): MenuItemInput[] {
   const flat: MenuItemInput[] = [];
   for (let i = 0; i < items.length; i++) {
-    const item = items[i];
+    const item = items[i]!;
     flat.push({
       id: item.id,
       label: item.label,

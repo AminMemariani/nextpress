@@ -8,7 +8,7 @@ import { MediaDetailModal } from "./media-detail-modal";
 import type { MediaAssetDto } from "@nextpress/core/media/media-types";
 
 interface Props {
-  initialData?: { items: MediaAssetDto[]; total: number; page: number; totalPages: number };
+  initialData?: { items: MediaAssetDto[]; total: number; page: number; perPage: number; totalPages: number };
   selectionMode?: boolean;
   onSelect?: (asset: MediaAssetDto) => void;
 }
@@ -21,7 +21,7 @@ export function MediaGrid({ initialData, selectionMode, onSelect }: Props) {
   const [selectedAsset, setSelectedAsset] = useState<MediaAssetDto | null>(null);
 
   const { data, isLoading } = trpc.media.list.useQuery(
-    { page, perPage: 24, mimeType: filter || undefined, search: search || undefined },
+    { page, perPage: 24, sortBy: "createdAt", sortOrder: "desc", mimeType: filter || undefined, search: search || undefined },
     { initialData: page === 1 && !filter && !search ? initialData : undefined },
   );
 

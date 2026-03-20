@@ -352,7 +352,7 @@ async function getCommentDepth(commentId: string): Promise<number> {
   let currentId: string | null = commentId;
 
   while (currentId && depth < MAX_THREAD_DEPTH + 1) {
-    const comment = await prisma.comment.findUnique({
+    const comment: { parentId: string | null } | null = await prisma.comment.findUnique({
       where: { id: currentId },
       select: { parentId: true },
     });

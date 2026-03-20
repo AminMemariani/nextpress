@@ -17,6 +17,8 @@ export async function GET(req: Request) {
 
     const result = await mediaService.list(auth.siteId, {
       ...pagination,
+      sortBy: "createdAt",
+      sortOrder: "desc",
       mimeType: url.searchParams.get("type") ?? undefined,
       search: url.searchParams.get("search") ?? undefined,
     });

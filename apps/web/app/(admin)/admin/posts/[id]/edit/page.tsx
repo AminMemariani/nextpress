@@ -15,7 +15,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
         title={`Edit: ${entry.title}`}
         breadcrumbs={[{ label: "Posts", href: "/admin/posts" }, { label: entry.title }]}
       />
-      <PostEditorShell contentTypeSlug="post" entryId={id} initialData={entry} />
+      <PostEditorShell contentTypeSlug="post" entryId={id} canPublish={auth.permissions.has("publish_content")} initialData={entry} />
     </div>
   );
 }

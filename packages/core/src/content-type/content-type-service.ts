@@ -11,6 +11,7 @@ import type { AuthContext } from "../auth/auth-types";
 import { assertCan } from "../auth/permissions";
 import { NotFoundError, ValidationError } from "../errors/cms-error";
 import { slugify, uniqueSlug } from "../validation/slug";
+import { toJsonInput } from "../prisma-helpers";
 import {
   createContentTypeSchema,
   updateContentTypeSchema,
@@ -49,7 +50,7 @@ export const contentTypeService = {
         menuIcon: data.menuIcon,
         menuPosition: data.menuPosition,
         supports: data.supports,
-        settings: data.settings,
+        settings: toJsonInput(data.settings),
         isSystem: false,
       },
       include: {
@@ -57,7 +58,7 @@ export const contentTypeService = {
       },
     });
 
-    return toDto(ct);
+    return toDto(ct as ContentTypeWithCount);
   },
 
   /** Update an existing content type */
@@ -89,14 +90,14 @@ export const contentTypeService = {
         ...(data.menuIcon !== undefined && { menuIcon: data.menuIcon }),
         ...(data.menuPosition !== undefined && { menuPosition: data.menuPosition }),
         ...(data.supports !== undefined && { supports: data.supports }),
-        ...(data.settings !== undefined && { settings: data.settings }),
+        ...(data.settings !== undefined && { settings: toJsonInput(data.settings) }),
       },
       include: {
         _count: { select: { fieldDefinitions: true, contentEntries: true } },
       },
     });
 
-    return toDto(ct);
+    return toDto(ct as ContentTypeWithCount);
   },
 
   /** Delete a content type (must have no entries) */

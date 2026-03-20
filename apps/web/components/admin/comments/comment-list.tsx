@@ -157,7 +157,7 @@ export function CommentList({ initialData, currentStatus, counts }: Props) {
         description="This comment and its replies will be permanently deleted."
         variant="danger"
         confirmLabel="Delete"
-        onConfirm={() => deleteId && deleteMutation.mutate({ id: deleteId })}
+        onConfirm={() => { if (deleteId) deleteMutation.mutate({ id: deleteId }); }}
         onCancel={() => setDeleteId(null)}
       />
     </div>

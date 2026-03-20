@@ -80,7 +80,7 @@ export type ContentStatusInput = z.infer<typeof contentStatusSchema>;
 import type { BlockData as _BlockData } from "@nextpress/blocks";
 export type BlockData = _BlockData;
 
-export const blockDataSchema: z.ZodType<BlockData> = z.lazy(() =>
+export const blockDataSchema: z.ZodType<BlockData, z.ZodTypeDef, unknown> = z.lazy(() =>
   z.object({
     id: z.string(),
     type: z.string(),

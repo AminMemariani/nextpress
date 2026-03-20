@@ -7,7 +7,9 @@
  */
 
 import { prisma } from "@nextpress/db";
+import { Prisma } from "@prisma/client";
 import { NotFoundError } from "../errors/cms-error";
+import { toJsonInput } from "../prisma-helpers";
 import type { RevisionDto } from "./revision-types";
 
 export const revisionService = {
@@ -50,9 +52,9 @@ export const revisionService = {
         contentEntryId,
         version: nextVersion,
         title: entry.title,
-        blocks: entry.blocks,
+        blocks: entry.blocks ?? Prisma.JsonNull,
         excerpt: entry.excerpt,
-        fieldValues: fieldSnapshot,
+        fieldValues: toJsonInput(fieldSnapshot),
         authorId,
         changeNote: changeNote ?? null,
       },
@@ -61,7 +63,7 @@ export const revisionService = {
       },
     });
 
-    return toDto(revision);
+    return toDto(revision as Parameters<typeof toDto>[0]);
   },
 
   /** List revisions for a content entry, newest first */
@@ -109,7 +111,7 @@ export const revisionService = {
       where: { id: rev.contentEntryId },
       data: {
         title: rev.title,
-        blocks: rev.blocks,
+        blocks: rev.blocks ?? Prisma.JsonNull,
         excerpt: rev.excerpt,
       },
     });

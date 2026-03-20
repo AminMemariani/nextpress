@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { router, authedProcedure, permissionProcedure } from "../trpc";
 import { themeManager } from "@nextpress/core/theme/theme-manager";
 import { prisma } from "@nextpress/db";
@@ -34,7 +35,7 @@ export const themeRouter = router({
   updateCustomizations: permissionProcedure("customize_theme")
     .input(z.object({ customizations: z.record(z.unknown()) }))
     .mutation(async ({ ctx, input }) => {
-      await prisma.themeInstall.updateMany({ where: { siteId: ctx.auth.siteId, isActive: true }, data: { customizations: input.customizations } });
+      await prisma.themeInstall.updateMany({ where: { siteId: ctx.auth.siteId, isActive: true }, data: { customizations: input.customizations as unknown as Prisma.InputJsonValue } });
       return { success: true };
     }),
 });

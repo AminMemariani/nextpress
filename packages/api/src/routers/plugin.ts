@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import {
   router,
   authedProcedure,
@@ -74,7 +75,7 @@ export const pluginRouter = router({
       const { prisma } = await import("@nextpress/db");
       await prisma.pluginInstall.updateMany({
         where: { slug: input.slug, siteId: ctx.auth.siteId },
-        data: { settings: input.settings },
+        data: { settings: input.settings as unknown as Prisma.InputJsonValue },
       });
       return { success: true };
     }),

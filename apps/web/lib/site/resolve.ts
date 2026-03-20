@@ -27,7 +27,7 @@ export const resolveSite = cache(async (headers: Headers) => {
 
   // 2. Custom domain
   const host = headers.get("host") ?? "";
-  const domain = host.split(":")[0]; // Strip port
+  const domain = host.split(":")[0] ?? ""; // Strip port
 
   if (domain && !domain.endsWith(".nextpress.app") && domain !== "localhost") {
     const site = await prisma.site.findUnique({

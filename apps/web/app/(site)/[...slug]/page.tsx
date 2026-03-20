@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const site = await resolveSite(h);
   if (!site) return { title: "Not Found" };
 
-  const entrySlug = segments[segments.length - 1];
+  const entrySlug = segments[segments.length - 1]!;
 
   // CACHED: try content entry
   const entry = await getCachedEntry(site.id, entrySlug);
@@ -49,7 +49,7 @@ export default async function CatchAllPage({ params }: Props) {
   const site = await resolveSite(h);
   if (!site) notFound();
 
-  const entrySlug = segments[segments.length - 1];
+  const entrySlug = segments[segments.length - 1]!;
   const theme = await themeManager.getActive(site.id);
   const install = await getCachedThemeInstall(site.id);
   const customizations = (install?.customizations as Record<string, unknown>) ?? {};

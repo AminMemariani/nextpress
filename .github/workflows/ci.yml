@@ -36,9 +36,8 @@ jobs:
         run: pnpm --filter @nextpress/db exec prisma validate
       - name: Generate Prisma client
         run: pnpm --filter @nextpress/db exec prisma generate
-      - name: Typecheck (informational)
+      - name: Typecheck
         run: pnpm turbo typecheck
-        continue-on-error: true
 
   # ── Unit tests ──
   unit-tests:

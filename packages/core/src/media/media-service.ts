@@ -20,9 +20,11 @@
  */
 
 import { prisma } from "@nextpress/db";
+import { Prisma } from "@prisma/client";
 import type { AuthContext } from "../auth/auth-types";
 import { assertCan } from "../auth/permissions";
 import { NotFoundError, ValidationError } from "../errors/cms-error";
+import { toJsonInput, toNullableJsonInput } from "../prisma-helpers";
 import { paginate, type PaginatedResult } from "../validation/schemas";
 import type { StorageProvider } from "./storage-provider";
 import { generateStorageKey } from "./storage-provider";
@@ -126,8 +128,8 @@ export const mediaService = {
         alt: data.alt ?? null,
         title: data.title ?? data.filename.replace(/\.[^.]+$/, ""),
         caption: data.caption ?? null,
-        variants,
-        meta,
+        variants: toJsonInput(variants),
+        meta: toJsonInput(meta),
         uploaderId: auth.user.id,
       },
       include: { uploader: { select: { id: true, name: true } } },
@@ -167,7 +169,7 @@ export const mediaService = {
         ...(data.alt !== undefined && { alt: data.alt }),
         ...(data.title !== undefined && { title: data.title }),
         ...(data.caption !== undefined && { caption: data.caption }),
-        ...(data.focalPoint !== undefined && { focalPoint: data.focalPoint }),
+        ...(data.focalPoint !== undefined && { focalPoint: toNullableJsonInput(data.focalPoint) }),
       },
       include: { uploader: { select: { id: true, name: true } } },
     });
