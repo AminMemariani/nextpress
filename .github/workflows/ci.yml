@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nextpress_test
   TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nextpress_test
   NEXTAUTH_SECRET: ci-test-secret-not-for-production-use-only
