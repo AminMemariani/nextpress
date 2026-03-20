@@ -178,6 +178,15 @@ importers:
         specifier: ^6.0.0
         version: 6.19.2(prisma@6.19.2(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)
     devDependencies:
+      '@types/bcryptjs':
+        specifier: ^2.4.0
+        version: 2.4.6
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      bcryptjs:
+        specifier: ^2.4.3
+        version: 2.4.3
       prisma:
         specifier: ^6.0.0
         version: 6.19.2(magicast@0.3.5)(typescript@5.9.3)

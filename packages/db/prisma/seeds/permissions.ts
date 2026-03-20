@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { PERMISSION_DEFINITIONS } from "@nextpress/core/auth/auth-config";
+import { PERMISSION_DEFINITIONS } from "./seed-constants";
 
 export async function seedPermissions(prisma: PrismaClient) {
   console.log("Seeding permissions...");

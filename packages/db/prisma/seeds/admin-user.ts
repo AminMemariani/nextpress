@@ -1,6 +1,6 @@
 import type { PrismaClient, Site } from "@prisma/client";
 import { hash } from "bcryptjs";
-import { BCRYPT_ROUNDS } from "@nextpress/core/auth/auth-config";
+import { BCRYPT_ROUNDS } from "./seed-constants";
 
 export async function seedAdminUser(prisma: PrismaClient, site: Site) {
   console.log("Seeding admin user...");

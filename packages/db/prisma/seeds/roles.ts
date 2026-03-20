@@ -1,8 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import {
-  ROLE_DEFINITIONS,
-  SUPER_ADMIN_ROLE,
-} from "@nextpress/core/auth/roles";
+import { ROLE_DEFINITIONS, SUPER_ADMIN_ROLE } from "./seed-constants";
 
 export async function seedRoles(prisma: PrismaClient) {
   console.log("Seeding roles...");

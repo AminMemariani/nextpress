@@ -31,3 +31,4 @@ packages/core/src/generated/*.ts
 # Uploads (dev only)
 apps/web/public/uploads/*
 !apps/web/public/uploads/.gitkeep
+.mcp.json
