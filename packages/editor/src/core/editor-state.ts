@@ -74,7 +74,7 @@ export function editorReducer(
       const blockIndex = state.blocks.findIndex((b) => b.id === action.id);
       if (blockIndex === -1) return state;
       const newBlocks = [...state.blocks];
-      const [moved] = newBlocks.splice(blockIndex, 1);
+      const [moved] = newBlocks.splice(blockIndex, 1) as [BlockData];
       newBlocks.splice(action.toIndex, 0, moved);
       return pushHistory(state, {
         ...state,

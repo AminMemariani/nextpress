@@ -56,9 +56,7 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter @nextpress/db exec prisma generate
       - name: Run unit tests with coverage
-        run: pnpm --filter @nextpress/core exec vitest run --reporter=verbose --coverage --dir src/__tests__/unit
-        env:
-          SKIP_DB: "true"
+        run: pnpm --filter @nextpress/core exec vitest run --reporter=verbose --coverage src/__tests__/unit
         continue-on-error: true
       - name: Upload coverage to Codecov
         if: always()
@@ -107,7 +105,7 @@ jobs:
       - name: Push schema to test database
         run: pnpm --filter @nextpress/db exec prisma db push --skip-generate
       - name: Run integration tests
-        run: pnpm --filter @nextpress/core exec vitest run --reporter=verbose --dir src/__tests__/integration
+        run: pnpm --filter @nextpress/core exec vitest run --reporter=verbose src/__tests__/integration
         continue-on-error: true
 
   # ── Gate ──

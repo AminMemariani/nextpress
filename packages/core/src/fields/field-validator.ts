@@ -26,6 +26,7 @@ export function zodSchemaForField(def: FieldDefinition): z.ZodTypeAny {
   switch (def.fieldType) {
     case "TEXT": {
       let s = z.string();
+      if (def.isRequired && typeof v.minLength !== "number") s = s.min(1);
       if (typeof v.minLength === "number") s = s.min(v.minLength);
       if (typeof v.maxLength === "number") s = s.max(v.maxLength);
       if (typeof v.pattern === "string") s = s.regex(new RegExp(v.pattern));

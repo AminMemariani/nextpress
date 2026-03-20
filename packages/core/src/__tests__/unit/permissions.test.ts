@@ -13,7 +13,7 @@ import {
   canPublishContent,
   canAccessAdmin,
 } from "../../auth/permissions";
-import { mockAuth, mockContributorAuth, mockEditorAuth } from "../setup";
+import { mockAuth, mockContributorAuth, mockEditorAuth } from "../helpers";
 
 describe("can()", () => {
   it("grants permission when role has it", () => {

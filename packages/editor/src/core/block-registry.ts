@@ -10,16 +10,16 @@
  * is server-safe.
  */
 
-import type { ComponentType } from "react";
 import type { z } from "zod";
-import type { BlockEditProps } from "@nextpress/blocks";
 import type { EditorBlockDefinition } from "./types";
 
 const editorRegistry = new Map<string, EditorBlockDefinition>();
 
 /** Register a block's edit component for the editor */
-export function registerEditorBlock(def: EditorBlockDefinition): void {
-  editorRegistry.set(def.type, def);
+export function registerEditorBlock<
+  TSchema extends z.ZodObject<z.ZodRawShape>,
+>(def: EditorBlockDefinition<TSchema>): void {
+  editorRegistry.set(def.type, def as EditorBlockDefinition);
 }
 
 /** Get the editor definition (includes edit component) */
